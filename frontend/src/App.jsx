@@ -218,7 +218,7 @@ const ProductCard = ({ product }) => {
       <div className="product-info">
         <h3>{product.name_he}</h3>
         <p className="product-sku">מק"ט: {product.sku}</p>
-        <p className="product-price">₪{product.price.toFixed(2)}</p>
+        <p className="product-price">₪{parseFloat(product.price || 0).toFixed(2)}</p>
         <button onClick={addToCart} className="btn btn-primary" style={{ width: '100%' }}>
           הוסף לעגלה
         </button>
@@ -275,7 +275,7 @@ const ProductDetail = () => {
           <div className="product-detail-info">
             <h1>{product.name_he}</h1>
             <p className="product-sku">מק"ט: {product.sku}</p>
-            <p className="product-price large">₪{product.price.toFixed(2)}</p>
+            <p className="product-price large">₪{parseFloat(product.price || 0).toFixed(2)}</p>
             <div className="product-description">
               <h3>תיאור המוצר:</h3>
               <p>{product.description_he || product.description}</p>
@@ -359,7 +359,7 @@ const Cart = () => {
       })
       
       const order = orderRes.data
-      const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+      const total = cartItems.reduce((sum, item) => sum + (parseFloat(item.price || 0) * item.quantity), 0)
       
       // Initialize Cardcom payment
       const token = localStorage.getItem('token')
@@ -387,7 +387,7 @@ const Cart = () => {
 
   if (loading) return <div className="loading">טוען עגלה...</div>
 
-  const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  const total = cartItems.reduce((sum, item) => sum + (parseFloat(item.price || 0) * item.quantity), 0)
 
   return (
     <div className="section">
@@ -405,7 +405,7 @@ const Cart = () => {
                 <div key={item.id} className="card cart-item">
                   <div className="cart-item-info">
                     <h3>{item.name_he}</h3>
-                    <p>₪{item.price.toFixed(2)} × {item.quantity} = ₪{(item.price * item.quantity).toFixed(2)}</p>
+                    <p>₪{parseFloat(item.price || 0).toFixed(2)} × {item.quantity} = ₪{(parseFloat(item.price || 0) * item.quantity).toFixed(2)}</p>
                   </div>
                   <div className="cart-item-actions">
                     <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="btn btn-secondary">-</button>
@@ -419,7 +419,7 @@ const Cart = () => {
             <div className="cart-summary card">
               <h3>סיכום הזמנה</h3>
               <p style={{ fontSize: '24px', fontWeight: 'bold', marginTop: '16px' }}>
-                סה"כ: ₪{total.toFixed(2)}
+                סה"כ: ₪{parseFloat(total || 0).toFixed(2)}
               </p>
               <button onClick={checkout} className="btn btn-primary" style={{ width: '100%', marginTop: '16px', fontSize: '18px', padding: '16px' }}>
                 השלם הזמנה
@@ -558,7 +558,7 @@ const Orders = () => {
                 <p>תאריך: {new Date(order.created_at).toLocaleDateString('he-IL')}</p>
                 <p>סטטוס: {order.status}</p>
                 <p style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '8px' }}>
-                  סה"כ: ₪{order.total_amount.toFixed(2)}
+                  סה"כ: ₪{parseFloat(order.total_amount || 0).toFixed(2)}
                 </p>
               </div>
             ))}
