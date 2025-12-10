@@ -437,6 +437,40 @@ app.get('/api/orders/:userId', async (req, res) => {
 app.post('/api/register', async (req, res) => {
   try {
     const { email, password, name, phone } = req.body;
+    
+    // Validation
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'כתובת אימייל לא תקינה' });
+    }
+    
+    if (!password || password.length < 8) {
+      return res.status(400).json({ error: 'סיסמה חייבת להכיל לפחות 8 תווים' });
+    }
+    
+    // Check password strength
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /[0-9]/.test(password);
+    
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
+      return res.status(400).json({ error: 'סיסמה חייבת להכיל אותיות גדולות וקטנות ומספרים' });
+    }
+    
+    if (!name || name.length < 2) {
+      return res.status(400).json({ error: 'שם חייב להכיל לפחות 2 תווים' });
+    }
+    
+    // Check if email already exists
+    const existingUser = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ error: 'כתובת אימייל זו כבר רשומה במערכת' });
+    }
+    
+    // Validate phone if provided
+    if (phone && !/^0[2-9]\d{7,8}$/.test(phone.replace(/-/g, ''))) {
+      return res.status(400).json({ error: 'מספר טלפון לא תקין' });
+    }
+    
     const bcrypt = require('bcryptjs');
     const hashedPassword = await bcrypt.hash(password, 10);
     
@@ -447,10 +481,10 @@ app.post('/api/register', async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (error) {
     if (error.code === '23505') {
-      return res.status(400).json({ error: 'Email already exists' });
+      return res.status(400).json({ error: 'כתובת אימייל זו כבר רשומה במערכת' });
     }
     console.error('Error registering user:', error);
-    res.status(500).json({ error: 'Failed to register user' });
+    res.status(500).json({ error: 'שגיאה בהרשמה' });
   }
 });
 

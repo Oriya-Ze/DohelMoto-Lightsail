@@ -6,14 +6,14 @@
 
 /* Header */
 .header {
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-  color: #333;
+  background: linear-gradient(135deg, #2d5016 0%, #3d6b1f 100%);
+  color: #fff;
   padding: 15px 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   position: sticky;
   top: 0;
   z-index: 1000;
-  border-bottom: 3px solid #2563eb;
+  border-bottom: 3px solid #8b6914;
 }
 
 .header-content {
@@ -25,19 +25,20 @@
 
 .logo {
   text-decoration: none;
-  color: #2563eb;
+  color: #fff;
 }
 
 .logo h1 {
   font-size: 32px;
   margin-bottom: 4px;
-  color: #2563eb;
+  color: #fff;
   font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
 }
 
 .logo p {
   font-size: 14px;
-  color: #666;
+  color: #e8f5e9;
 }
 
 .nav {
@@ -48,10 +49,10 @@
 }
 
 .nav a {
-  color: #333;
+  color: #fff;
   text-decoration: none;
   font-weight: 500;
-  transition: color 0.3s;
+  transition: all 0.3s;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -60,12 +61,13 @@
 }
 
 .nav a:hover {
-  color: #2563eb;
-  background: #f0f7ff;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
 }
 
 .user-name {
-  color: #333;
+  color: #fff;
   font-weight: 600;
   padding: 8px 12px;
 }
@@ -74,7 +76,7 @@
   display: none;
   background: none;
   border: none;
-  color: #333;
+  color: #fff;
   font-size: 24px;
   cursor: pointer;
 }
@@ -100,7 +102,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.8) 0%, rgba(29, 78, 216, 0.8) 100%);
+  background: linear-gradient(135deg, rgba(45, 80, 22, 0.85) 0%, rgba(139, 105, 20, 0.85) 100%);
   z-index: 1;
 }
 
@@ -142,7 +144,8 @@
   font-size: 36px;
   margin-bottom: 40px;
   text-align: center;
-  color: #1f2937;
+  color: #2d5016;
+  font-weight: bold;
 }
 
 /* Products */
@@ -217,7 +220,7 @@
 .product-price {
   font-size: 24px;
   font-weight: bold;
-  color: #2563eb;
+  color: #2d5016;
   margin-bottom: 16px;
 }
 
@@ -374,7 +377,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.85) 0%, rgba(29, 78, 216, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(45, 80, 22, 0.85) 0%, rgba(139, 105, 20, 0.85) 100%);
   transition: opacity 0.3s;
   z-index: 1;
 }
@@ -408,11 +411,12 @@
 
 /* Footer */
 .footer {
-  background: #1f2937;
+  background: linear-gradient(135deg, #2d5016 0%, #1a3509 100%);
   color: white;
   padding: 32px 0;
   text-align: center;
   margin-top: auto;
+  border-top: 3px solid #8b6914;
 }
 
 /* Responsive */

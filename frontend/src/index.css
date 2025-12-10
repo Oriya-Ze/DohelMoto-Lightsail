@@ -35,14 +35,16 @@ body {
 }
 
 .btn-primary {
-  background-color: #2563eb;
+  background: linear-gradient(135deg, #3d6b1f 0%, #2d5016 100%);
   color: white;
+  border: 2px solid #8b6914;
 }
 
 .btn-primary:hover {
-  background-color: #1d4ed8;
+  background: linear-gradient(135deg, #4a7d28 0%, #3d6b1f 100%);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 12px rgba(45, 80, 22, 0.4);
+  border-color: #a67c1a;
 }
 
 .btn-secondary {
@@ -65,13 +67,14 @@ body {
 
 .btn-outline {
   background-color: transparent;
-  border: 2px solid #2563eb;
-  color: #2563eb;
+  border: 2px solid #3d6b1f;
+  color: #3d6b1f;
 }
 
 .btn-outline:hover {
-  background-color: #2563eb;
+  background: linear-gradient(135deg, #3d6b1f 0%, #2d5016 100%);
   color: white;
+  border-color: #2d5016;
 }
 
 /* Cards */
@@ -100,7 +103,17 @@ body {
 
 .input:focus {
   outline: none;
-  border-color: #2563eb;
+  border-color: #3d6b1f;
+}
+
+.input-error {
+  border-color: #dc2626;
+}
+
+.error-text {
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 4px;
 }
 
 /* Container */

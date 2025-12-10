@@ -435,10 +435,95 @@ const Cart = () => {
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true)
   const [formData, setFormData] = useState({ email: '', password: '', name: '', phone: '' })
+  const [errors, setErrors] = useState({})
+  const [passwordStrength, setPasswordStrength] = useState({ strength: 0, text: '' })
+  const [emailExists, setEmailExists] = useState(false)
   const navigate = useNavigate()
+
+  // Check password strength
+  const checkPasswordStrength = (password) => {
+    let strength = 0
+    let text = ''
+    
+    if (password.length >= 8) strength++
+    if (password.length >= 12) strength++
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++
+    if (/[0-9]/.test(password)) strength++
+    if (/[^A-Za-z0-9]/.test(password)) strength++
+    
+    if (strength <= 2) text = 'חלשה'
+    else if (strength <= 3) text = 'בינונית'
+    else if (strength <= 4) text = 'חזקה'
+    else text = 'חזקה מאוד'
+    
+    return { strength, text }
+  }
+
+  // Check if email exists
+  const checkEmailExists = async (email) => {
+    if (!email || !email.includes('@')) {
+      setEmailExists(false)
+      return
+    }
+    try {
+      // We'll check on submit, but we can add a debounced check here if needed
+      setEmailExists(false)
+    } catch (error) {
+      setEmailExists(false)
+    }
+  }
+
+  const validateForm = () => {
+    const newErrors = {}
+    
+    if (!isLogin) {
+      if (!formData.name || formData.name.length < 2) {
+        newErrors.name = 'שם חייב להכיל לפחות 2 תווים'
+      }
+      
+      if (formData.phone && !/^0[2-9]\d{7,8}$/.test(formData.phone.replace(/-/g, ''))) {
+        newErrors.phone = 'מספר טלפון לא תקין'
+      }
+    }
+    
+    if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'כתובת אימייל לא תקינה'
+    }
+    
+    if (!formData.password) {
+      newErrors.password = 'סיסמה חובה'
+    } else if (!isLogin && passwordStrength.strength < 3) {
+      newErrors.password = 'הסיסמה חלשה מדי. נדרשות לפחות 8 תווים, אותיות גדולות וקטנות ומספרים'
+    }
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handlePasswordChange = (e) => {
+    const password = e.target.value
+    setFormData({ ...formData, password })
+    if (!isLogin) {
+      setPasswordStrength(checkPasswordStrength(password))
+    }
+  }
+
+  const handleEmailChange = (e) => {
+    const email = e.target.value
+    setFormData({ ...formData, email })
+    setErrors({ ...errors, email: '' })
+    if (!isLogin) {
+      checkEmailExists(email)
+    }
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    
+    if (!validateForm()) {
+      return
+    }
+    
     if (isLogin) {
       axios.post(`${API_URL}/login`, {
         email: formData.email,
@@ -448,15 +533,24 @@ const Login = () => {
         localStorage.setItem('user', JSON.stringify(res.data.user))
         navigate('/')
         window.location.reload()
-      }).catch(() => {
-        alert('שגיאה בהתחברות')
+      }).catch((err) => {
+        const message = err.response?.data?.error || 'שגיאה בהתחברות'
+        setErrors({ submit: message })
       })
     } else {
       axios.post(`${API_URL}/register`, formData).then(() => {
         alert('נרשמת בהצלחה! התחבר עכשיו')
         setIsLogin(true)
-      }).catch(() => {
-        alert('שגיאה בהרשמה')
+        setFormData({ email: '', password: '', name: '', phone: '' })
+        setErrors({})
+        setPasswordStrength({ strength: 0, text: '' })
+      }).catch((err) => {
+        const message = err.response?.data?.error || 'שגיאה בהרשמה'
+        if (message.includes('Email already exists') || message.includes('קיים')) {
+          setErrors({ email: 'כתובת אימייל זו כבר רשומה במערכת' })
+        } else {
+          setErrors({ submit: message })
+        }
       })
     }
   }
@@ -467,44 +561,90 @@ const Login = () => {
         <div className="card">
           <h2>{isLogin ? 'התחברות' : 'הרשמה'}</h2>
           <form onSubmit={handleSubmit}>
+            {errors.submit && (
+              <div className="error-message" style={{ marginBottom: '16px', padding: '12px', background: '#fee2e2', color: '#991b1b', borderRadius: '6px' }}>
+                {errors.submit}
+              </div>
+            )}
+            
             {!isLogin && (
               <>
-                <input
-                  type="text"
-                  placeholder="שם מלא"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="input"
-                  required
-                />
-                <input
-                  type="tel"
-                  placeholder="טלפון"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="input"
-                  style={{ marginTop: '16px' }}
-                />
+                <div>
+                  <input
+                    type="text"
+                    placeholder="שם מלא"
+                    value={formData.name}
+                    onChange={(e) => {
+                      setFormData({ ...formData, name: e.target.value })
+                      setErrors({ ...errors, name: '' })
+                    }}
+                    className={`input ${errors.name ? 'input-error' : ''}`}
+                    required
+                  />
+                  {errors.name && <div className="error-text">{errors.name}</div>}
+                </div>
+                <div style={{ marginTop: '16px' }}>
+                  <input
+                    type="tel"
+                    placeholder="טלפון (אופציונלי)"
+                    value={formData.phone}
+                    onChange={(e) => {
+                      setFormData({ ...formData, phone: e.target.value })
+                      setErrors({ ...errors, phone: '' })
+                    }}
+                    className={`input ${errors.phone ? 'input-error' : ''}`}
+                  />
+                  {errors.phone && <div className="error-text">{errors.phone}</div>}
+                </div>
               </>
             )}
-            <input
-              type="email"
-              placeholder="אימייל"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="input"
-              style={{ marginTop: '16px' }}
-              required
-            />
-            <input
-              type="password"
-              placeholder="סיסמה"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="input"
-              style={{ marginTop: '16px' }}
-              required
-            />
+            <div style={{ marginTop: '16px' }}>
+              <input
+                type="email"
+                placeholder="אימייל"
+                value={formData.email}
+                onChange={handleEmailChange}
+                className={`input ${errors.email ? 'input-error' : ''}`}
+                required
+              />
+              {errors.email && <div className="error-text">{errors.email}</div>}
+              {emailExists && !isLogin && (
+                <div className="error-text">כתובת אימייל זו כבר רשומה</div>
+              )}
+            </div>
+            <div style={{ marginTop: '16px' }}>
+              <input
+                type="password"
+                placeholder="סיסמה"
+                value={formData.password}
+                onChange={handlePasswordChange}
+                className={`input ${errors.password ? 'input-error' : ''}`}
+                required
+              />
+              {errors.password && <div className="error-text">{errors.password}</div>}
+              {!isLogin && formData.password && (
+                <div style={{ marginTop: '8px' }}>
+                  <div style={{ display: 'flex', gap: '4px', marginBottom: '4px' }}>
+                    {[1, 2, 3, 4, 5].map((level) => (
+                      <div
+                        key={level}
+                        style={{
+                          flex: 1,
+                          height: '4px',
+                          background: level <= passwordStrength.strength 
+                            ? level <= 2 ? '#dc2626' : level <= 3 ? '#f59e0b' : '#10b981'
+                            : '#e5e7eb',
+                          borderRadius: '2px'
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <div style={{ fontSize: '12px', color: passwordStrength.strength <= 2 ? '#dc2626' : passwordStrength.strength <= 3 ? '#f59e0b' : '#10b981' }}>
+                    חוזק סיסמה: {passwordStrength.text}
+                  </div>
+                </div>
+              )}
+            </div>
             <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '16px' }}>
               {isLogin ? 'התחבר' : 'הירשם'}
             </button>
