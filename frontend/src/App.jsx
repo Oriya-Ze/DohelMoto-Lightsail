@@ -57,14 +57,10 @@ const Home = () => {
   const [products, setProducts] = useState([])
 
   const categoryImages = {
-    'מנועים': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop',
-    'תמסורת': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop',
-    'מתלים': 'https://images.unsplash.com/photo-1558980664-1a0d0e4b5c3d?w=600&h=400&fit=crop',
-    'בלמים': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop',
-    'חשמל': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop',
-    'חלקי גוף': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop',
-    'מסננים': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop',
-    'צמיגים וגלגלים': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop'
+    'צמיגים': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop',
+    'חלקי פלסטיק': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop',
+    'חלקי חילוף': 'https://images.unsplash.com/photo-1558980664-1a0d0e4b5c3d?w=600&h=400&fit=crop',
+    'אביזרים': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop'
   }
 
   useEffect(() => {

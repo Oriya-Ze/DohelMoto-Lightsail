@@ -70,14 +70,10 @@ const seedData = async () => {
 
     // Categories
     const categories = [
-      { name: 'Engines', name_he: 'מנועים', description: 'Engine parts and components' },
-      { name: 'Transmission', name_he: 'תמסורת', description: 'Transmission and gearbox parts' },
-      { name: 'Suspension', name_he: 'מתלים', description: 'Suspension components' },
-      { name: 'Brakes', name_he: 'בלמים', description: 'Brake system parts' },
-      { name: 'Electrical', name_he: 'חשמל', description: 'Electrical components' },
-      { name: 'Body Parts', name_he: 'חלקי גוף', description: 'Body and frame parts' },
-      { name: 'Filters', name_he: 'מסננים', description: 'Air, oil, and fuel filters' },
-      { name: 'Tires & Wheels', name_he: 'צמיגים וגלגלים', description: 'Tires and wheels' },
+      { name: 'Tires', name_he: 'צמיגים', description: 'צמיגים לכלי שטח' },
+      { name: 'Plastic Parts', name_he: 'חלקי פלסטיק', description: 'חלקי פלסטיק וגוף' },
+      { name: 'Spare Parts', name_he: 'חלקי חילוף', description: 'חלקי חילוף כלליים' },
+      { name: 'Accessories', name_he: 'אביזרים', description: 'אביזרים וציוד נלווה' },
     ];
 
     for (const cat of categories) {
@@ -97,16 +93,52 @@ const seedData = async () => {
     // Products
     const products = [
       {
+        name: 'ATV Tire Set',
+        name_he: 'סט צמיגים לכל השטח',
+        description: 'All-terrain tire set (4 tires)',
+        description_he: 'סט צמיגים לכל השטח (4 צמיגים) - איכות מעולה',
+        price: 450.00,
+        category_id: categoryMap['צמיגים'],
+        sku: 'TIR-001',
+        brand: 'DohelMoto',
+        stock: 12,
+        compatible_models: ['Yamaha', 'YFZ450', 'Honda', 'TRX450R', 'Polaris', 'RZR 1000']
+      },
+      {
+        name: 'Front Fender',
+        name_he: 'מגן קדמי',
+        description: 'Durable front fender for protection',
+        description_he: 'מגן קדמי עמיד להגנה מפני בוץ ואבק',
+        price: 95.00,
+        category_id: categoryMap['חלקי פלסטיק'],
+        sku: 'PLA-001',
+        brand: 'DohelMoto',
+        stock: 35,
+        compatible_models: ['Polaris', 'RZR 1000', 'Can-Am', 'Maverick X3']
+      },
+      {
+        name: 'Rear Fender',
+        name_he: 'מגן אחורי',
+        description: 'Durable rear fender',
+        description_he: 'מגן אחורי עמיד',
+        price: 85.00,
+        category_id: categoryMap['חלקי פלסטיק'],
+        sku: 'PLA-002',
+        brand: 'DohelMoto',
+        stock: 30,
+        compatible_models: ['Yamaha', 'YFZ450', 'Honda', 'TRX450R']
+      },
+      {
         name: 'Engine Oil Filter',
         name_he: 'מסנן שמן מנוע',
-        description: 'High-quality engine oil filter for tractors',
+        description: 'High-quality engine oil filter',
         description_he: 'מסנן שמן מנוע איכותי לטרקטורונים',
         price: 45.90,
-        category_id: categoryMap['מסננים'],
+        category_id: categoryMap['חלקי חילוף'],
         sku: 'FIL-001',
         brand: 'DohelMoto',
         stock: 50,
-        compatible_models: ['Yamaha', 'YFZ450', 'Honda', 'TRX450']
+        compatible_models: ['Yamaha', 'YFZ450', 'Honda', 'TRX450R']
       },
       {
         name: 'Brake Pad Set',
@@ -114,7 +146,7 @@ const seedData = async () => {
         description: 'Premium brake pads for off-road vehicles',
         description_he: 'רפידות בלם פרימיום לכלי שטח',
         price: 120.00,
-        category_id: categoryMap['בלמים'],
+        category_id: categoryMap['חלקי חילוף'],
         sku: 'BRK-001',
         brand: 'DohelMoto',
         stock: 30,
@@ -126,7 +158,7 @@ const seedData = async () => {
         description: 'Heavy-duty shock absorber for rough terrain',
         description_he: 'בולם זעזועים כבד לשטח קשה',
         price: 350.00,
-        category_id: categoryMap['מתלים'],
+        category_id: categoryMap['חלקי חילוף'],
         sku: 'SUS-001',
         brand: 'DohelMoto',
         stock: 20,
@@ -138,7 +170,7 @@ const seedData = async () => {
         description: 'High-performance air filter',
         description_he: 'מסנן אוויר ביצועים גבוהים',
         price: 35.50,
-        category_id: categoryMap['מסננים'],
+        category_id: categoryMap['חלקי חילוף'],
         sku: 'FIL-002',
         brand: 'DohelMoto',
         stock: 40,
@@ -150,7 +182,7 @@ const seedData = async () => {
         description: 'Complete clutch kit with plates and springs',
         description_he: 'ערכת מצמד מלאה עם לוחות וקפיצים',
         price: 280.00,
-        category_id: categoryMap['תמסורת'],
+        category_id: categoryMap['חלקי חילוף'],
         sku: 'TRN-001',
         brand: 'DohelMoto',
         stock: 15,
@@ -162,7 +194,7 @@ const seedData = async () => {
         description: 'Iridium spark plugs for better performance',
         description_he: 'נרות הצתה אירידיום לביצועים משופרים',
         price: 55.00,
-        category_id: categoryMap['מנועים'],
+        category_id: categoryMap['חלקי חילוף'],
         sku: 'ENG-001',
         brand: 'DohelMoto',
         stock: 60,
@@ -174,34 +206,10 @@ const seedData = async () => {
         description: 'High-capacity 12V battery for ATVs',
         description_he: 'סוללה 12V קיבולת גבוהה לכלי שטח',
         price: 180.00,
-        category_id: categoryMap['חשמל'],
+        category_id: categoryMap['חלקי חילוף'],
         sku: 'ELC-001',
         brand: 'DohelMoto',
         stock: 25,
-        compatible_models: ['All Models']
-      },
-      {
-        name: 'Front Fender',
-        name_he: 'מגן קדמי',
-        description: 'Durable front fender for protection',
-        description_he: 'מגן קדמי עמיד להגנה',
-        price: 95.00,
-        category_id: categoryMap['חלקי גוף'],
-        sku: 'BDY-001',
-        brand: 'DohelMoto',
-        stock: 35,
-        compatible_models: ['Polaris', 'RZR 1000', 'Can-Am', 'Maverick X3']
-      },
-      {
-        name: 'ATV Tire Set',
-        name_he: 'סט צמיגים',
-        description: 'All-terrain tire set (4 tires)',
-        description_he: 'סט צמיגים לכל השטח (4 צמיגים)',
-        price: 450.00,
-        category_id: categoryMap['צמיגים וגלגלים'],
-        sku: 'TIR-001',
-        brand: 'DohelMoto',
-        stock: 12,
         compatible_models: ['All Models']
       },
       {
@@ -210,10 +218,70 @@ const seedData = async () => {
         description: 'Aluminum radiator for efficient cooling',
         description_he: 'רדיאטור אלומיניום לקירור יעיל',
         price: 320.00,
-        category_id: categoryMap['מנועים'],
+        category_id: categoryMap['חלקי חילוף'],
         sku: 'ENG-002',
         brand: 'DohelMoto',
         stock: 18,
+        compatible_models: ['Yamaha', 'YFZ450', 'Honda', 'TRX450R']
+      },
+      {
+        name: 'Winch',
+        name_he: 'מגבה',
+        description: 'Heavy-duty winch for recovery',
+        description_he: 'מגבה כבד לחילוץ',
+        price: 850.00,
+        category_id: categoryMap['אביזרים'],
+        sku: 'ACC-001',
+        brand: 'DohelMoto',
+        stock: 8,
+        compatible_models: ['Polaris', 'RZR 1000', 'Can-Am', 'Maverick X3']
+      },
+      {
+        name: 'LED Light Bar',
+        name_he: 'פנס לד',
+        description: 'Bright LED light bar for night riding',
+        description_he: 'פנס לד בהיר לנסיעה בלילה',
+        price: 320.00,
+        category_id: categoryMap['אביזרים'],
+        sku: 'ACC-002',
+        brand: 'DohelMoto',
+        stock: 15,
+        compatible_models: ['All Models']
+      },
+      {
+        name: 'Storage Box',
+        name_he: 'תיבת אחסון',
+        description: 'Waterproof storage box',
+        description_he: 'תיבת אחסון אטומה למים',
+        price: 180.00,
+        category_id: categoryMap['אביזרים'],
+        sku: 'ACC-003',
+        brand: 'DohelMoto',
+        stock: 20,
+        compatible_models: ['Polaris', 'RZR 1000', 'Can-Am', 'Maverick X3']
+      },
+      {
+        name: 'Handlebar Grips',
+        name_he: 'ידיות כידון',
+        description: 'Comfortable handlebar grips',
+        description_he: 'ידיות כידון נוחות',
+        price: 45.00,
+        category_id: categoryMap['אביזרים'],
+        sku: 'ACC-004',
+        brand: 'DohelMoto',
+        stock: 40,
+        compatible_models: ['All Models']
+      },
+      {
+        name: 'Side Panels',
+        name_he: 'לוחות צד',
+        description: 'Replacement side panels',
+        description_he: 'לוחות צד חלופיים',
+        price: 120.00,
+        category_id: categoryMap['חלקי פלסטיק'],
+        sku: 'PLA-003',
+        brand: 'DohelMoto',
+        stock: 25,
         compatible_models: ['Yamaha', 'YFZ450', 'Honda', 'TRX450R']
       },
     ];
