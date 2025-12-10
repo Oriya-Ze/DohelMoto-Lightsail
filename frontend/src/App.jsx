@@ -56,6 +56,17 @@ const Home = () => {
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
 
+  const categoryImages = {
+    'מנועים': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop',
+    'תמסורת': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop',
+    'מתלים': 'https://images.unsplash.com/photo-1558980664-1a0d0e4b5c3d?w=600&h=400&fit=crop',
+    'בלמים': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop',
+    'חשמל': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop',
+    'חלקי גוף': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop',
+    'מסננים': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop',
+    'צמיגים וגלגלים': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop'
+  }
+
   useEffect(() => {
     axios.get(`${API_URL}/categories`).then(res => setCategories(res.data.slice(0, 6)))
     axios.get(`${API_URL}/products?limit=8`).then(res => setProducts(res.data))
@@ -76,9 +87,20 @@ const Home = () => {
           <h2 className="section-title">קטגוריות מובילות</h2>
           <div className="grid grid-3">
             {categories.map(cat => (
-              <Link key={cat.id} to={`/products?category=${cat.id}`} className="card category-card">
-                <h3>{cat.name_he}</h3>
-                <p>{cat.description}</p>
+              <Link 
+                key={cat.id} 
+                to={`/products?category=${cat.id}`} 
+                className="card category-card"
+                style={{ 
+                  backgroundImage: `url(${categoryImages[cat.name_he] || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop'})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}
+              >
+                <div className="category-overlay">
+                  <h3>{cat.name_he}</h3>
+                  <p>{cat.description}</p>
+                </div>
               </Link>
             ))}
           </div>
@@ -333,16 +355,16 @@ const Cart = () => {
         user_id: user.id,
         items,
         shipping_address: user.address || '',
-        payment_method: 'verifone'
+        payment_method: 'cardcom'
       })
       
       const order = orderRes.data
       const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
       
-      // Initialize Verifone payment
+      // Initialize Cardcom payment
       const token = localStorage.getItem('token')
       const paymentRes = await axios.post(
-        `${API_URL}/payment/verifone/init`,
+        `${API_URL}/payment/cardcom/init`,
         {
           order_id: order.id,
           amount: total,
@@ -351,7 +373,7 @@ const Cart = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       )
       
-      // Redirect to Verifone payment page
+      // Redirect to Cardcom payment page
       if (paymentRes.data.payment_url) {
         window.location.href = paymentRes.data.payment_url
       } else {

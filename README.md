@@ -61,11 +61,17 @@ http://localhost
 docker compose down
 ```
 
-## משתמש מנהל
+## משתמשי מנהל
 
-לאחר הרצת seed, נוצר משתמש מנהל:
-- **אימייל**: admin@dohelmoto.com
-- **סיסמה**: admin123
+לאחר הרצת seed, נוצרו שני משתמשי מנהל:
+
+1. **מנהל ראשי**:
+   - **אימייל**: admin@dohelmoto.com
+   - **סיסמה**: admin123
+
+2. **מנהל בדיקה**:
+   - **אימייל**: test@dohelmoto.com
+   - **סיסמה**: test123
 
 התחבר עם פרטי המנהל כדי לגשת לפאנל הניהול בכתובת: `/admin`
 
@@ -118,19 +124,21 @@ docker compose down
 - `PUT /api/admin/categories/:id` - עדכון קטגוריה
 - `DELETE /api/admin/categories/:id` - מחיקת קטגוריה
 
-### תשלומים (Verifone)
-- `POST /api/payment/verifone/init` - אתחול תשלום
-- `POST /api/payment/verifone/callback` - callback מתשלום
+### תשלומים (Cardcom)
+- `POST /api/payment/cardcom/init` - אתחול תשלום
+- `POST /api/payment/cardcom/callback` - callback מתשלום
 
-## הגדרת Verifone VeriPAY
+## הגדרת Cardcom
 
 על מנת להפעיל את מערכת התשלומים, עדכן את הקובץ `.env` ב-backend:
 
 ```env
-VERIFONE_API_URL=https://secure.verifone.co.il/api
-VERIFONE_TERMINAL_ID=your_terminal_id
-VERIFONE_PASSWORD=your_password
+CARDCOM_API_URL=https://secure.cardcom.solutions
+CARDCOM_TERMINAL_ID=your_terminal_id
+CARDCOM_USERNAME=your_username
+CARDCOM_PASSWORD=your_password
 FRONTEND_URL=http://localhost
+BACKEND_URL=http://localhost:5000
 ```
 
 ## פיתוח
@@ -177,7 +185,7 @@ docker compose logs -f
 - **Database**: PostgreSQL
 - **Web Server**: Nginx
 - **Containerization**: Docker, Docker Compose
-- **Payment Gateway**: Verifone VeriPAY
+- **Payment Gateway**: Cardcom
 
 ## רישיון
 

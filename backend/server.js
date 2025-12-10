@@ -131,7 +131,7 @@ const initDatabase = async () => {
         payment_method VARCHAR(50),
         payment_status VARCHAR(50) DEFAULT 'pending',
         payment_transaction_id VARCHAR(255),
-        verifone_token VARCHAR(500),
+        cardcom_token VARCHAR(500),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -557,8 +557,8 @@ app.delete('/api/admin/categories/:id', authenticateToken, requireAdmin, async (
   }
 });
 
-// Verifone VeriPAY Integration
-app.post('/api/payment/verifone/init', authenticateToken, async (req, res) => {
+// Cardcom Payment Gateway Integration
+app.post('/api/payment/cardcom/init', authenticateToken, async (req, res) => {
   try {
     const { order_id, amount, currency = 'ILS' } = req.body;
     
@@ -570,40 +570,50 @@ app.post('/api/payment/verifone/init', authenticateToken, async (req, res) => {
     
     const order = orderResult.rows[0];
     
-    // Verifone VeriPAY API configuration
-    const VERIFONE_API_URL = process.env.VERIFONE_API_URL || 'https://secure.verifone.co.il/api';
-    const VERIFONE_TERMINAL_ID = process.env.VERIFONE_TERMINAL_ID;
-    const VERIFONE_PASSWORD = process.env.VERIFONE_PASSWORD;
+    // Cardcom API configuration
+    const CARDCOM_API_URL = process.env.CARDCOM_API_URL || 'https://secure.cardcom.solutions';
+    const CARDCOM_TERMINAL_ID = process.env.CARDCOM_TERMINAL_ID;
+    const CARDCOM_USERNAME = process.env.CARDCOM_USERNAME;
+    const CARDCOM_PASSWORD = process.env.CARDCOM_PASSWORD;
     
-    // Create payment request
     const axios = require('axios');
     const crypto = require('crypto');
     
     // Generate unique transaction ID
     const transactionId = `DOHEL${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
     
-    // Create payment token request
+    // Cardcom LowProfile payment request format
     const paymentData = {
-      TerminalID: VERIFONE_TERMINAL_ID,
-      Password: VERIFONE_PASSWORD,
-      Sum: amount.toFixed(2),
+      TerminalNumber: CARDCOM_TERMINAL_ID,
+      UserName: CARDCOM_USERNAME,
+      SumToBill: amount.toFixed(2),
       Currency: currency,
-      TransactionID: transactionId,
-      SuccessURL: `${process.env.FRONTEND_URL || 'http://localhost'}/payment/success?order_id=${order_id}`,
-      CancelURL: `${process.env.FRONTEND_URL || 'http://localhost'}/payment/cancel?order_id=${order_id}`,
-      ErrorURL: `${process.env.FRONTEND_URL || 'http://localhost'}/payment/error?order_id=${order_id}`,
+      TransactionId: transactionId,
+      SuccessRedirectUrl: `${process.env.FRONTEND_URL || 'http://localhost'}/payment/success?order_id=${order_id}`,
+      ErrorRedirectUrl: `${process.env.FRONTEND_URL || 'http://localhost'}/payment/error?order_id=${order_id}`,
+      CancelType: 0,
+      IndicatorUrl: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payment/cardcom/callback`,
       Language: 'he',
+      CoinId: 1, // ILS
       Description: `DohelMoto Order #${order_id}`
     };
     
-    // In production, you would make actual API call to Verifone
-    // For now, we'll return a mock payment URL
-    const paymentUrl = `${VERIFONE_API_URL}/payment?token=${transactionId}`;
+    // Create hash for Cardcom LowProfile
+    const hashString = `${CARDCOM_TERMINAL_ID}${CARDCOM_USERNAME}${paymentData.SumToBill}${paymentData.Currency}${transactionId}${CARDCOM_PASSWORD}`;
+    const hash = crypto.createHash('md5').update(hashString).digest('hex');
+    paymentData.LowProfileHash = hash;
+    
+    // Build payment URL for Cardcom LowProfile
+    const params = new URLSearchParams();
+    Object.keys(paymentData).forEach(key => {
+      params.append(key, paymentData[key]);
+    });
+    const paymentUrl = `${CARDCOM_API_URL}/LowProfile.aspx?${params.toString()}`;
     
     // Update order with transaction ID
     await pool.query(
-      'UPDATE orders SET payment_transaction_id = $1, verifone_token = $2 WHERE id = $3',
-      [transactionId, transactionId, order_id]
+      'UPDATE orders SET payment_transaction_id = $1, cardcom_token = $2 WHERE id = $3',
+      [transactionId, hash, order_id]
     );
     
     res.json({
@@ -617,23 +627,21 @@ app.post('/api/payment/verifone/init', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/payment/verifone/callback', async (req, res) => {
+app.post('/api/payment/cardcom/callback', async (req, res) => {
   try {
-    const { transaction_id, status, order_id } = req.body;
+    const { ResponseCode, TransactionId, OrderId, LowProfileCode } = req.body;
     
-    // Verify payment with Verifone
-    // In production, verify the callback signature
-    
-    if (status === 'success') {
+    // Cardcom response codes: 0 = success
+    if (ResponseCode === '0' || ResponseCode === 0) {
       await pool.query(
-        'UPDATE orders SET payment_status = $1, status = $2 WHERE id = $3',
-        ['completed', 'paid', order_id]
+        'UPDATE orders SET payment_status = $1, status = $2 WHERE payment_transaction_id = $3',
+        ['completed', 'paid', TransactionId]
       );
       res.json({ success: true, message: 'Payment confirmed' });
     } else {
       await pool.query(
-        'UPDATE orders SET payment_status = $1 WHERE id = $2',
-        ['failed', order_id]
+        'UPDATE orders SET payment_status = $1 WHERE payment_transaction_id = $2',
+        ['failed', TransactionId]
       );
       res.json({ success: false, message: 'Payment failed' });
     }

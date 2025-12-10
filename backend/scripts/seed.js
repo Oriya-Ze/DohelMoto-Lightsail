@@ -19,6 +19,16 @@ const seedData = async () => {
     );
     console.log('Admin user created: admin@dohelmoto.com / admin123');
 
+    // Create test admin user
+    const testAdminPassword = await bcrypt.hash('test123', 10);
+    await pool.query(
+      `INSERT INTO users (email, password, name, phone, role) 
+       VALUES ($1, $2, $3, $4, $5) 
+       ON CONFLICT (email) DO UPDATE SET role = 'admin'`,
+      ['test@dohelmoto.com', testAdminPassword, 'מנהל בדיקה', '0501234567', 'admin']
+    );
+    console.log('Test Admin user created: test@dohelmoto.com / test123');
+
     // Categories
     const categories = [
       { name: 'Engines', name_he: 'מנועים', description: 'Engine parts and components' },

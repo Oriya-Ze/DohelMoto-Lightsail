@@ -16,7 +16,7 @@ const PaymentCallback = ({ type }) => {
       // Update order status
       const token = localStorage.getItem('token')
       axios.post(
-        `${API_URL}/payment/verifone/callback`,
+        `${API_URL}/payment/cardcom/callback`,
         { transaction_id: searchParams.get('transaction_id'), status: 'success', order_id: orderId },
         { headers: { Authorization: `Bearer ${token}` } }
       ).finally(() => {
