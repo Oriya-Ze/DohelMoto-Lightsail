@@ -74,6 +74,19 @@ const initDatabase = async () => {
       )
     `);
 
+    // Add role column if it doesn't exist (migration)
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='users' AND column_name='role'
+        ) THEN
+          ALTER TABLE users ADD COLUMN role VARCHAR(20) DEFAULT 'user';
+        END IF;
+      END $$;
+    `);
+
     // Categories table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS categories (
@@ -108,6 +121,31 @@ const initDatabase = async () => {
       )
     `);
 
+    // Add missing columns to products table (migration)
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='products' AND column_name='images'
+        ) THEN
+          ALTER TABLE products ADD COLUMN images TEXT[];
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='products' AND column_name='is_active'
+        ) THEN
+          ALTER TABLE products ADD COLUMN is_active BOOLEAN DEFAULT true;
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='products' AND column_name='updated_at'
+        ) THEN
+          ALTER TABLE products ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+        END IF;
+      END $$;
+    `);
+
     // Cart table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS cart (
@@ -136,6 +174,26 @@ const initDatabase = async () => {
       )
     `);
 
+    // Add cardcom_token column if it doesn't exist (migration)
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='orders' AND column_name='cardcom_token'
+        ) THEN
+          ALTER TABLE orders ADD COLUMN cardcom_token VARCHAR(500);
+        END IF;
+        -- Remove verifone_token if it exists
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='orders' AND column_name='verifone_token'
+        ) THEN
+          ALTER TABLE orders DROP COLUMN verifone_token;
+        END IF;
+      END $$;
+    `);
+
     // Order items table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS order_items (
@@ -146,6 +204,25 @@ const initDatabase = async () => {
         price DECIMAL(10, 2) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
+    `);
+
+    // Add missing columns to orders table (migration)
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='orders' AND column_name='payment_status'
+        ) THEN
+          ALTER TABLE orders ADD COLUMN payment_status VARCHAR(50) DEFAULT 'pending';
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='orders' AND column_name='payment_transaction_id'
+        ) THEN
+          ALTER TABLE orders ADD COLUMN payment_transaction_id VARCHAR(255);
+        END IF;
+      END $$;
     `);
 
     console.log('Database tables initialized successfully');
