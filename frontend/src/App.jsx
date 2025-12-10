@@ -119,6 +119,7 @@ const Home = () => {
 
 const Products = () => {
   const [products, setProducts] = useState([])
+  const [filteredProducts, setFilteredProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [vehicles, setVehicles] = useState([])
   const [vehicleModels, setVehicleModels] = useState([])
@@ -127,6 +128,8 @@ const Products = () => {
   const [selectedCategory, setSelectedCategory] = useState('')
   const [selectedVehicleBrand, setSelectedVehicleBrand] = useState('')
   const [selectedVehicleModel, setSelectedVehicleModel] = useState('')
+  const [sortBy, setSortBy] = useState('newest')
+  const [priceRange, setPriceRange] = useState({ min: '', max: '' })
   const user = JSON.parse(localStorage.getItem('user') || 'null')
 
   useEffect(() => {
@@ -139,6 +142,10 @@ const Products = () => {
   useEffect(() => {
     loadProducts()
   }, [selectedCategory, search, selectedVehicleBrand, selectedVehicleModel])
+
+  useEffect(() => {
+    filterAndSortProducts()
+  }, [products, sortBy, priceRange])
 
   useEffect(() => {
     if (selectedVehicleBrand) {
@@ -182,6 +189,35 @@ const Products = () => {
       setProducts(res.data)
       setLoading(false)
     })
+  }
+
+  const filterAndSortProducts = () => {
+    let filtered = [...products]
+
+    // Filter by price range
+    if (priceRange.min) {
+      filtered = filtered.filter(p => parseFloat(p.price || 0) >= parseFloat(priceRange.min))
+    }
+    if (priceRange.max) {
+      filtered = filtered.filter(p => parseFloat(p.price || 0) <= parseFloat(priceRange.max))
+    }
+
+    // Sort products
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'price-low':
+          return parseFloat(a.price || 0) - parseFloat(b.price || 0)
+        case 'price-high':
+          return parseFloat(b.price || 0) - parseFloat(a.price || 0)
+        case 'name':
+          return a.name_he.localeCompare(b.name_he)
+        case 'newest':
+        default:
+          return new Date(b.created_at) - new Date(a.created_at)
+      }
+    })
+
+    setFilteredProducts(filtered)
   }
 
   const handleSaveVehicle = async () => {
@@ -259,14 +295,63 @@ const Products = () => {
             </button>
           )}
         </div>
+        <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <label style={{ fontWeight: '600' }}>מיון:</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="input"
+              style={{ minWidth: '150px' }}
+            >
+              <option value="newest">חדש ביותר</option>
+              <option value="price-low">מחיר: נמוך לגבוה</option>
+              <option value="price-high">מחיר: גבוה לנמוך</option>
+              <option value="name">שם: א-ת</option>
+            </select>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <label style={{ fontWeight: '600' }}>טווח מחירים:</label>
+            <input
+              type="number"
+              placeholder="מ-"
+              value={priceRange.min}
+              onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
+              className="input"
+              style={{ width: '100px' }}
+            />
+            <span>-</span>
+            <input
+              type="number"
+              placeholder="עד"
+              value={priceRange.max}
+              onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
+              className="input"
+              style={{ width: '100px' }}
+            />
+          </div>
+        </div>
         {loading ? (
           <div className="loading">טוען מוצרים...</div>
         ) : (
-          <div className="grid grid-4">
-            {products.map(product => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          <>
+            {filteredProducts.length === 0 ? (
+              <div className="empty-cart">
+                <p>לא נמצאו מוצרים</p>
+              </div>
+            ) : (
+              <>
+                <p style={{ marginBottom: '16px', color: '#666' }}>
+                  נמצאו {filteredProducts.length} מוצרים
+                </p>
+                <div className="grid grid-4">
+                  {filteredProducts.map(product => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              </>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -306,8 +391,22 @@ const ProductCard = ({ product }) => {
         <h3>{product.name_he}</h3>
         <p className="product-sku">מק"ט: {product.sku}</p>
         <p className="product-price">₪{parseFloat(product.price || 0).toFixed(2)}</p>
-        <button onClick={addToCart} className="btn btn-primary" style={{ width: '100%' }}>
-          הוסף לעגלה
+        {product.stock !== undefined && (
+          <p style={{ 
+            fontSize: '12px', 
+            color: product.stock > 0 ? '#10b981' : '#dc2626',
+            marginBottom: '8px'
+          }}>
+            {product.stock > 0 ? `במלאי (${product.stock})` : 'אין במלאי'}
+          </p>
+        )}
+        <button 
+          onClick={addToCart} 
+          className="btn btn-primary" 
+          style={{ width: '100%' }}
+          disabled={product.stock === 0}
+        >
+          {product.stock === 0 ? 'אין במלאי' : 'הוסף לעגלה'}
         </button>
         <Link to={`/product/${product.id}`} className="btn btn-outline" style={{ width: '100%', marginTop: '8px' }}>
           פרטים נוספים
@@ -321,15 +420,22 @@ const ProductDetail = () => {
   const { id } = useParams()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [selectedImage, setSelectedImage] = useState(0)
   const navigate = useNavigate()
   const user = JSON.parse(localStorage.getItem('user') || 'null')
 
   useEffect(() => {
     axios.get(`${API_URL}/products/${id}`).then(res => {
       setProduct(res.data)
+      setSelectedImage(0)
       setLoading(false)
     })
   }, [id])
+
+  const productImages = product ? [
+    product.image_url,
+    ...(product.images || [])
+  ].filter(Boolean) : []
 
   const addToCart = () => {
     if (!user) {
@@ -353,8 +459,31 @@ const ProductDetail = () => {
       <div className="container">
         <div className="product-detail">
           <div className="product-detail-image">
-            {product.image_url ? (
-              <img src={product.image_url} alt={product.name_he} />
+            {productImages.length > 0 ? (
+              <>
+                <img src={productImages[selectedImage]} alt={product.name_he} style={{ width: '100%', borderRadius: '8px' }} />
+                {productImages.length > 1 && (
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '16px', flexWrap: 'wrap' }}>
+                    {productImages.map((img, idx) => (
+                      <img
+                        key={idx}
+                        src={img}
+                        alt={`${product.name_he} ${idx + 1}`}
+                        onClick={() => setSelectedImage(idx)}
+                        style={{
+                          width: '80px',
+                          height: '80px',
+                          objectFit: 'cover',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          border: selectedImage === idx ? '3px solid #3d6b1f' : '1px solid #e5e7eb',
+                          opacity: selectedImage === idx ? 1 : 0.7
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
             ) : (
               <div className="placeholder-image large">📦</div>
             )}
@@ -363,6 +492,16 @@ const ProductDetail = () => {
             <h1>{product.name_he}</h1>
             <p className="product-sku">מק"ט: {product.sku}</p>
             <p className="product-price large">₪{parseFloat(product.price || 0).toFixed(2)}</p>
+            {product.stock !== undefined && (
+              <p style={{ 
+                fontSize: '16px', 
+                color: product.stock > 0 ? '#10b981' : '#dc2626',
+                marginBottom: '16px',
+                fontWeight: '600'
+              }}>
+                {product.stock > 0 ? `✓ במלאי (${product.stock} יחידות)` : '✗ אין במלאי'}
+              </p>
+            )}
             <div className="product-description">
               <h3>תיאור המוצר:</h3>
               <p>{product.description_he || product.description}</p>
@@ -378,8 +517,13 @@ const ProductDetail = () => {
               </div>
             )}
             <div className="product-actions">
-              <button onClick={addToCart} className="btn btn-primary" style={{ fontSize: '18px', padding: '16px 32px' }}>
-                הוסף לעגלה
+              <button 
+                onClick={addToCart} 
+                className="btn btn-primary" 
+                style={{ fontSize: '18px', padding: '16px 32px' }}
+                disabled={product.stock === 0}
+              >
+                {product.stock === 0 ? 'אין במלאי' : 'הוסף לעגלה'}
               </button>
             </div>
           </div>

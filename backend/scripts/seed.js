@@ -68,6 +68,13 @@ const seedData = async () => {
     }
     console.log('Vehicles catalog seeded');
 
+    // Delete old categories and products first
+    await pool.query('DELETE FROM order_items');
+    await pool.query('DELETE FROM cart');
+    await pool.query('DELETE FROM products');
+    await pool.query('DELETE FROM categories');
+    console.log('Old categories and products deleted');
+
     // Categories
     const categories = [
       { name: 'Tires', name_he: 'צמיגים', description: 'צמיגים לכלי שטח' },
@@ -78,10 +85,11 @@ const seedData = async () => {
 
     for (const cat of categories) {
       await pool.query(
-        'INSERT INTO categories (name, name_he, description) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
+        'INSERT INTO categories (name, name_he, description) VALUES ($1, $2, $3)',
         [cat.name, cat.name_he, cat.description]
       );
     }
+    console.log('Categories seeded');
 
     // Get category IDs
     const catResult = await pool.query('SELECT id, name_he FROM categories');
