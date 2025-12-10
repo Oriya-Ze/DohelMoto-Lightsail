@@ -17,6 +17,36 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Auth middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  const jwt = require('jsonwebtoken');
+  jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production', (err, user) => {
+    if (err) return res.status(403).json({ error: 'Invalid or expired token' });
+    req.user = user;
+    next();
+  });
+};
+
+// Admin middleware
+const requireAdmin = async (req, res, next) => {
+  try {
+    const result = await pool.query('SELECT role FROM users WHERE id = $1', [req.user.id]);
+    if (result.rows.length === 0 || result.rows[0].role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    next();
+  } catch (error) {
+    res.status(500).json({ error: 'Error checking admin status' });
+  }
+};
+
 // Test database connection
 pool.on('connect', () => {
   console.log('Connected to PostgreSQL database');
@@ -39,6 +69,7 @@ const initDatabase = async () => {
         name VARCHAR(255) NOT NULL,
         phone VARCHAR(50),
         address TEXT,
+        role VARCHAR(20) DEFAULT 'user',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -66,11 +97,14 @@ const initDatabase = async () => {
         price DECIMAL(10, 2) NOT NULL,
         category_id INTEGER REFERENCES categories(id),
         image_url VARCHAR(500),
+        images TEXT[],
         stock INTEGER DEFAULT 0,
         sku VARCHAR(100) UNIQUE,
         brand VARCHAR(100),
         compatible_models TEXT[],
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
@@ -95,6 +129,9 @@ const initDatabase = async () => {
         status VARCHAR(50) DEFAULT 'pending',
         shipping_address TEXT,
         payment_method VARCHAR(50),
+        payment_status VARCHAR(50) DEFAULT 'pending',
+        payment_transaction_id VARCHAR(255),
+        verifone_token VARCHAR(500),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -371,12 +408,238 @@ app.post('/api/login', async (req, res) => {
         id: user.id,
         email: user.email,
         name: user.name,
-        phone: user.phone
+        phone: user.phone,
+        role: user.role || 'user'
       }
     });
   } catch (error) {
     console.error('Error logging in:', error);
     res.status(500).json({ error: 'Failed to login' });
+  }
+});
+
+// Admin Routes - Product Management
+app.post('/api/admin/products', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { name, name_he, description, description_he, price, category_id, image_url, images, stock, sku, brand, compatible_models } = req.body;
+    const result = await pool.query(
+      `INSERT INTO products (name, name_he, description, description_he, price, category_id, image_url, images, stock, sku, brand, compatible_models) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+      [name, name_he, description, description_he, price, category_id, image_url, images || [], stock, sku, brand, compatible_models || []]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Error creating product:', error);
+    res.status(500).json({ error: 'Failed to create product' });
+  }
+});
+
+app.put('/api/admin/products/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, name_he, description, description_he, price, category_id, image_url, images, stock, sku, brand, compatible_models, is_active } = req.body;
+    const result = await pool.query(
+      `UPDATE products 
+       SET name = $1, name_he = $2, description = $3, description_he = $4, price = $5, category_id = $6, 
+           image_url = $7, images = $8, stock = $9, sku = $10, brand = $11, compatible_models = $12, 
+           is_active = $13, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $14 RETURNING *`,
+      [name, name_he, description, description_he, price, category_id, image_url, images || [], stock, sku, brand, compatible_models || [], is_active !== undefined ? is_active : true, id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating product:', error);
+    res.status(500).json({ error: 'Failed to update product' });
+  }
+});
+
+app.delete('/api/admin/products/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM products WHERE id = $1', [id]);
+    res.json({ message: 'Product deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    res.status(500).json({ error: 'Failed to delete product' });
+  }
+});
+
+app.get('/api/admin/products', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM products ORDER BY created_at DESC');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    res.status(500).json({ error: 'Failed to fetch products' });
+  }
+});
+
+app.get('/api/admin/orders', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT o.*, u.name as user_name, u.email as user_email,
+       json_agg(json_build_object('id', oi.id, 'product_id', oi.product_id, 'quantity', oi.quantity, 'price', oi.price)) as items
+       FROM orders o
+       LEFT JOIN users u ON o.user_id = u.id
+       LEFT JOIN order_items oi ON o.id = oi.order_id
+       GROUP BY o.id, u.name, u.email
+       ORDER BY o.created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json({ error: 'Failed to fetch orders' });
+  }
+});
+
+app.put('/api/admin/orders/:id/status', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const result = await pool.query(
+      'UPDATE orders SET status = $1 WHERE id = $2 RETURNING *',
+      [status, id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    res.status(500).json({ error: 'Failed to update order status' });
+  }
+});
+
+// Admin Routes - Category Management
+app.post('/api/admin/categories', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { name, name_he, description, image_url } = req.body;
+    const result = await pool.query(
+      'INSERT INTO categories (name, name_he, description, image_url) VALUES ($1, $2, $3, $4) RETURNING *',
+      [name, name_he, description, image_url]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Error creating category:', error);
+    res.status(500).json({ error: 'Failed to create category' });
+  }
+});
+
+app.put('/api/admin/categories/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, name_he, description, image_url } = req.body;
+    const result = await pool.query(
+      'UPDATE categories SET name = $1, name_he = $2, description = $3, image_url = $4 WHERE id = $5 RETURNING *',
+      [name, name_he, description, image_url, id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating category:', error);
+    res.status(500).json({ error: 'Failed to update category' });
+  }
+});
+
+app.delete('/api/admin/categories/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM categories WHERE id = $1', [id]);
+    res.json({ message: 'Category deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting category:', error);
+    res.status(500).json({ error: 'Failed to delete category' });
+  }
+});
+
+// Verifone VeriPAY Integration
+app.post('/api/payment/verifone/init', authenticateToken, async (req, res) => {
+  try {
+    const { order_id, amount, currency = 'ILS' } = req.body;
+    
+    // Get order details
+    const orderResult = await pool.query('SELECT * FROM orders WHERE id = $1', [order_id]);
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    
+    const order = orderResult.rows[0];
+    
+    // Verifone VeriPAY API configuration
+    const VERIFONE_API_URL = process.env.VERIFONE_API_URL || 'https://secure.verifone.co.il/api';
+    const VERIFONE_TERMINAL_ID = process.env.VERIFONE_TERMINAL_ID;
+    const VERIFONE_PASSWORD = process.env.VERIFONE_PASSWORD;
+    
+    // Create payment request
+    const axios = require('axios');
+    const crypto = require('crypto');
+    
+    // Generate unique transaction ID
+    const transactionId = `DOHEL${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Create payment token request
+    const paymentData = {
+      TerminalID: VERIFONE_TERMINAL_ID,
+      Password: VERIFONE_PASSWORD,
+      Sum: amount.toFixed(2),
+      Currency: currency,
+      TransactionID: transactionId,
+      SuccessURL: `${process.env.FRONTEND_URL || 'http://localhost'}/payment/success?order_id=${order_id}`,
+      CancelURL: `${process.env.FRONTEND_URL || 'http://localhost'}/payment/cancel?order_id=${order_id}`,
+      ErrorURL: `${process.env.FRONTEND_URL || 'http://localhost'}/payment/error?order_id=${order_id}`,
+      Language: 'he',
+      Description: `DohelMoto Order #${order_id}`
+    };
+    
+    // In production, you would make actual API call to Verifone
+    // For now, we'll return a mock payment URL
+    const paymentUrl = `${VERIFONE_API_URL}/payment?token=${transactionId}`;
+    
+    // Update order with transaction ID
+    await pool.query(
+      'UPDATE orders SET payment_transaction_id = $1, verifone_token = $2 WHERE id = $3',
+      [transactionId, transactionId, order_id]
+    );
+    
+    res.json({
+      success: true,
+      payment_url: paymentUrl,
+      transaction_id: transactionId
+    });
+  } catch (error) {
+    console.error('Error initializing payment:', error);
+    res.status(500).json({ error: 'Failed to initialize payment' });
+  }
+});
+
+app.post('/api/payment/verifone/callback', async (req, res) => {
+  try {
+    const { transaction_id, status, order_id } = req.body;
+    
+    // Verify payment with Verifone
+    // In production, verify the callback signature
+    
+    if (status === 'success') {
+      await pool.query(
+        'UPDATE orders SET payment_status = $1, status = $2 WHERE id = $3',
+        ['completed', 'paid', order_id]
+      );
+      res.json({ success: true, message: 'Payment confirmed' });
+    } else {
+      await pool.query(
+        'UPDATE orders SET payment_status = $1 WHERE id = $2',
+        ['failed', order_id]
+      );
+      res.json({ success: false, message: 'Payment failed' });
+    }
+  } catch (error) {
+    console.error('Error processing payment callback:', error);
+    res.status(500).json({ error: 'Failed to process payment callback' });
   }
 });
 

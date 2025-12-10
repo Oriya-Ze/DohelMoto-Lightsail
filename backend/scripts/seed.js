@@ -8,6 +8,17 @@ const pool = new Pool({
 
 const seedData = async () => {
   try {
+    // Create admin user
+    const bcrypt = require('bcryptjs');
+    const adminPassword = await bcrypt.hash('admin123', 10);
+    await pool.query(
+      `INSERT INTO users (email, password, name, phone, role) 
+       VALUES ($1, $2, $3, $4, $5) 
+       ON CONFLICT (email) DO UPDATE SET role = 'admin'`,
+      ['admin@dohelmoto.com', adminPassword, 'מנהל מערכת', '0500000000', 'admin']
+    );
+    console.log('Admin user created: admin@dohelmoto.com / admin123');
+
     // Categories
     const categories = [
       { name: 'Engines', name_he: 'מנועים', description: 'Engine parts and components' },

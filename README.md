@@ -1,12 +1,14 @@
 # DohelMoto - חנות חלקי חילוף לטרקטורונים וכלי שטח
 
-חנות מקוונת מקצועית למכירת חלקי חילוף לטרקטורונים וכלי שטח, בנויה עם Docker Compose.
+חנות מקוונת מקצועית למכירת חלקי חילוף לטרקטורונים וכלי שטח, בנויה עם Docker Compose, עם מערכת ניהול למנהלים ואינטגרציה עם Verifone VeriPAY.
 
 ## תכונות
 
 - 🛒 **קטלוג מוצרים מלא** - חיפוש, סינון לפי קטגוריות, תצוגת פרטי מוצר
 - 🛍️ **עגלת קניות** - הוספה, עדכון ומחיקת מוצרים
 - 👤 **מערכת משתמשים** - הרשמה, התחברות וניהול הזמנות
+- 👨‍💼 **פאנל מנהל** - ניהול מוצרים, קטגוריות והזמנות
+- 💳 **תשלומים מאובטחים** - אינטגרציה עם Verifone VeriPAY
 - 📦 **ניהול הזמנות** - מעקב אחר הזמנות קודמות
 - 🎨 **ממשק משתמש מודרני** - עיצוב רספונסיבי ונוח
 - 🐳 **Docker Compose** - הפעלה קלה עם כל השירותים
@@ -28,20 +30,13 @@ DohelMoto-Lightsail/
 - Docker Engine
 - Docker Compose Plugin (מותקן עם Docker CE)
 
-### פתרון בעיות Docker (אם נדרש)
-
-אם אתה מקבל שגיאות הקשורות ל-Docker, הרץ:
-```bash
-./fix-docker.sh
-```
-
-לאחר מכן, התנתק והתחבר מחדש (או הרץ `newgrp docker`).
-
 ### הפעלה
 
 **אפשרות 1: שימוש בסקריפט (מומלץ)**
 ```bash
-./start.sh
+docker compose up --build -d
+sleep 10
+docker compose exec -T backend npm run seed
 ```
 
 **אפשרות 2: הפעלה ידנית**
@@ -65,6 +60,14 @@ http://localhost
 ```bash
 docker compose down
 ```
+
+## משתמש מנהל
+
+לאחר הרצת seed, נוצר משתמש מנהל:
+- **אימייל**: admin@dohelmoto.com
+- **סיסמה**: admin123
+
+התחבר עם פרטי המנהל כדי לגשת לפאנל הניהול בכתובת: `/admin`
 
 ## שירותים
 
@@ -103,6 +106,32 @@ docker compose down
 ### הזמנות
 - `POST /api/orders` - יצירת הזמנה
 - `GET /api/orders/:userId` - רשימת הזמנות
+
+### מנהל (דורש הרשאות admin)
+- `GET /api/admin/products` - רשימת כל המוצרים
+- `POST /api/admin/products` - יצירת מוצר חדש
+- `PUT /api/admin/products/:id` - עדכון מוצר
+- `DELETE /api/admin/products/:id` - מחיקת מוצר
+- `GET /api/admin/orders` - רשימת כל ההזמנות
+- `PUT /api/admin/orders/:id/status` - עדכון סטטוס הזמנה
+- `POST /api/admin/categories` - יצירת קטגוריה
+- `PUT /api/admin/categories/:id` - עדכון קטגוריה
+- `DELETE /api/admin/categories/:id` - מחיקת קטגוריה
+
+### תשלומים (Verifone)
+- `POST /api/payment/verifone/init` - אתחול תשלום
+- `POST /api/payment/verifone/callback` - callback מתשלום
+
+## הגדרת Verifone VeriPAY
+
+על מנת להפעיל את מערכת התשלומים, עדכן את הקובץ `.env` ב-backend:
+
+```env
+VERIFONE_API_URL=https://secure.verifone.co.il/api
+VERIFONE_TERMINAL_ID=your_terminal_id
+VERIFONE_PASSWORD=your_password
+FRONTEND_URL=http://localhost
+```
 
 ## פיתוח
 
@@ -148,6 +177,7 @@ docker compose logs -f
 - **Database**: PostgreSQL
 - **Web Server**: Nginx
 - **Containerization**: Docker, Docker Compose
+- **Payment Gateway**: Verifone VeriPAY
 
 ## רישיון
 

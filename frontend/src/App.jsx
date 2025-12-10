@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 import './App.css'
-import { FiShoppingCart, FiUser, FiSearch, FiMenu, FiX } from 'react-icons/fi'
+import { FiShoppingCart, FiUser, FiSearch, FiMenu, FiX, FiSettings } from 'react-icons/fi'
+import AdminPanel from './AdminPanel'
+import PaymentCallback from './PaymentCallback'
 
 const API_URL = '/api'
 
@@ -27,6 +29,11 @@ const Header = ({ cartCount, user, onLogout }) => {
                 <Link to="/cart" onClick={() => setMenuOpen(false)}>
                   <FiShoppingCart /> עגלה ({cartCount})
                 </Link>
+                {user.role === 'admin' && (
+                  <Link to="/admin" onClick={() => setMenuOpen(false)} className="btn btn-outline">
+                    <FiSettings /> ניהול
+                  </Link>
+                )}
                 <span className="user-name">{user.name}</span>
                 <button onClick={onLogout} className="btn btn-outline">התנתק</button>
               </>
@@ -310,7 +317,7 @@ const Cart = () => {
     })
   }
 
-  const checkout = () => {
+  const checkout = async () => {
     if (cartItems.length === 0) {
       alert('העגלה ריקה')
       return
@@ -319,15 +326,41 @@ const Cart = () => {
       product_id: item.product_id,
       quantity: item.quantity
     }))
-    axios.post(`${API_URL}/orders`, {
-      user_id: user.id,
-      items,
-      shipping_address: user.address || '',
-      payment_method: 'cash'
-    }).then(() => {
-      alert('ההזמנה בוצעה בהצלחה!')
-      navigate('/orders')
-    })
+    
+    try {
+      // Create order first
+      const orderRes = await axios.post(`${API_URL}/orders`, {
+        user_id: user.id,
+        items,
+        shipping_address: user.address || '',
+        payment_method: 'verifone'
+      })
+      
+      const order = orderRes.data
+      const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+      
+      // Initialize Verifone payment
+      const token = localStorage.getItem('token')
+      const paymentRes = await axios.post(
+        `${API_URL}/payment/verifone/init`,
+        {
+          order_id: order.id,
+          amount: total,
+          currency: 'ILS'
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      
+      // Redirect to Verifone payment page
+      if (paymentRes.data.payment_url) {
+        window.location.href = paymentRes.data.payment_url
+      } else {
+        alert('שגיאה בהתחלת תהליך התשלום')
+      }
+    } catch (error) {
+      console.error('Checkout error:', error)
+      alert('שגיאה בביצוע ההזמנה')
+    }
   }
 
   if (loading) return <div className="loading">טוען עגלה...</div>
@@ -538,6 +571,7 @@ function App() {
     localStorage.removeItem('user')
     setUser(null)
     setCartCount(0)
+    window.location.href = '/'
   }
 
   return (
@@ -552,6 +586,10 @@ function App() {
             <Route path="/cart" element={<Cart />} />
             <Route path="/login" element={<Login />} />
             <Route path="/orders" element={<Orders />} />
+            <Route path="/admin" element={user && user.role === 'admin' ? <AdminPanel user={user} onLogout={handleLogout} /> : <Login />} />
+            <Route path="/payment/success" element={<PaymentCallback type="success" />} />
+            <Route path="/payment/cancel" element={<PaymentCallback type="cancel" />} />
+            <Route path="/payment/error" element={<PaymentCallback type="error" />} />
           </Routes>
         </main>
         <footer className="footer">

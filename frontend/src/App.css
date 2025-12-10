@@ -6,13 +6,14 @@
 
 /* Header */
 .header {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  color: white;
-  padding: 20px 0;
+  background: #fff;
+  color: #333;
+  padding: 15px 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
   z-index: 1000;
+  border-bottom: 3px solid #2563eb;
 }
 
 .header-content {
@@ -24,17 +25,19 @@
 
 .logo {
   text-decoration: none;
-  color: white;
+  color: #2563eb;
 }
 
 .logo h1 {
   font-size: 32px;
   margin-bottom: 4px;
+  color: #2563eb;
+  font-weight: bold;
 }
 
 .logo p {
   font-size: 14px;
-  opacity: 0.9;
+  color: #666;
 }
 
 .nav {
@@ -45,50 +48,57 @@
 }
 
 .nav a {
-  color: white;
+  color: #333;
   text-decoration: none;
   font-weight: 500;
-  transition: opacity 0.3s;
+  transition: color 0.3s;
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
 }
 
 .nav a:hover {
-  opacity: 0.8;
+  color: #2563eb;
+  background: #f0f7ff;
 }
 
 .user-name {
-  color: white;
+  color: #333;
   font-weight: 600;
+  padding: 8px 12px;
 }
 
 .menu-toggle {
   display: none;
   background: none;
   border: none;
-  color: white;
+  color: #333;
   font-size: 24px;
   cursor: pointer;
 }
 
 /* Hero Section */
 .hero {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 80px 0;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: #333;
+  padding: 60px 0;
   text-align: center;
+  border-bottom: 1px solid #dee2e6;
 }
 
 .hero h2 {
-  font-size: 48px;
+  font-size: 42px;
   margin-bottom: 16px;
+  color: #2563eb;
+  font-weight: bold;
 }
 
 .hero p {
-  font-size: 20px;
+  font-size: 18px;
   margin-bottom: 32px;
-  opacity: 0.9;
+  color: #666;
 }
 
 /* Sections */
