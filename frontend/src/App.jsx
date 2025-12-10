@@ -57,10 +57,11 @@ const Home = () => {
   const [products, setProducts] = useState([])
 
   const categoryImages = {
-    'צמיגים': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop',
+    'צמיגים וג\'אנטים': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop',
     'חלקי פלסטיק': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop',
-    'חלקי חילוף': 'https://images.unsplash.com/photo-1558980664-1a0d0e4b5c3d?w=600&h=400&fit=crop',
-    'אביזרים': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop'
+    'פגושים': 'https://images.unsplash.com/photo-1558980664-1a0d0e4b5c3d?w=600&h=400&fit=crop',
+    'אביזרים': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop',
+    'חלקי חילוף': 'https://images.unsplash.com/photo-1558980664-1a0d0e4b5c3d?w=600&h=400&fit=crop'
   }
 
   useEffect(() => {
@@ -82,7 +83,7 @@ const Home = () => {
         <div className="container">
           <h2 className="section-title">קטגוריות מובילות</h2>
           <div className="grid grid-3">
-            {categories.map(cat => (
+            {categories.slice(0, 6).map(cat => (
               <Link 
                 key={cat.id} 
                 to={`/products?category=${cat.id}`} 

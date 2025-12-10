@@ -77,10 +77,11 @@ const seedData = async () => {
 
     // Categories
     const categories = [
-      { name: 'Tires', name_he: 'צמיגים', description: 'צמיגים לכלי שטח' },
+      { name: 'Tires and Rims', name_he: 'צמיגים וג\'אנטים', description: 'צמיגים וג\'אנטים לכלי שטח' },
       { name: 'Plastic Parts', name_he: 'חלקי פלסטיק', description: 'חלקי פלסטיק וגוף' },
-      { name: 'Spare Parts', name_he: 'חלקי חילוף', description: 'חלקי חילוף כלליים' },
+      { name: 'Bumpers', name_he: 'פגושים', description: 'פגושים לכלי שטח' },
       { name: 'Accessories', name_he: 'אביזרים', description: 'אביזרים וציוד נלווה' },
+      { name: 'Spare Parts', name_he: 'חלקי חילוף', description: 'חלקי חילוף כלליים' },
     ];
 
     for (const cat of categories) {
@@ -106,7 +107,7 @@ const seedData = async () => {
         description: 'All-terrain tire set (4 tires)',
         description_he: 'סט צמיגים לכל השטח (4 צמיגים) - איכות מעולה',
         price: 450.00,
-        category_id: categoryMap['צמיגים'],
+        category_id: categoryMap['צמיגים וג\'אנטים'],
         sku: 'TIR-001',
         brand: 'DohelMoto',
         stock: 12,
@@ -135,6 +136,42 @@ const seedData = async () => {
         brand: 'DohelMoto',
         stock: 30,
         compatible_models: ['Yamaha', 'YFZ450', 'Honda', 'TRX450R']
+      },
+      {
+        name: 'Front Bumper',
+        name_he: 'פגוש קדמי',
+        description: 'Heavy-duty front bumper',
+        description_he: 'פגוש קדמי כבד לכלי שטח',
+        price: 280.00,
+        category_id: categoryMap['פגושים'],
+        sku: 'BMP-001',
+        brand: 'DohelMoto',
+        stock: 15,
+        compatible_models: ['Polaris', 'RZR 1000', 'Can-Am', 'Maverick X3']
+      },
+      {
+        name: 'Rear Bumper',
+        name_he: 'פגוש אחורי',
+        description: 'Heavy-duty rear bumper',
+        description_he: 'פגוש אחורי כבד לכלי שטח',
+        price: 250.00,
+        category_id: categoryMap['פגושים'],
+        sku: 'BMP-002',
+        brand: 'DohelMoto',
+        stock: 12,
+        compatible_models: ['Yamaha', 'YFZ450', 'Honda', 'TRX450R']
+      },
+      {
+        name: 'ATV Rim Set',
+        name_he: 'סט ג\'אנטים',
+        description: 'Aluminum rims set (4 rims)',
+        description_he: 'סט ג\'אנטים אלומיניום (4 יחידות)',
+        price: 380.00,
+        category_id: categoryMap['צמיגים וג\'אנטים'],
+        sku: 'RIM-001',
+        brand: 'DohelMoto',
+        stock: 8,
+        compatible_models: ['All Models']
       },
       {
         name: 'Engine Oil Filter',
