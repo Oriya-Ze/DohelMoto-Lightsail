@@ -29,6 +29,45 @@ const seedData = async () => {
     );
     console.log('Test Admin user created: test@dohelmoto.com / test123');
 
+    // Vehicles catalog
+    const vehicles = [
+      // Yamaha
+      { brand: 'Yamaha', brand_he: 'יאמאהא', model: 'YFZ450', model_he: 'YFZ450', type: 'ATV' },
+      { brand: 'Yamaha', brand_he: 'יאמאהא', model: 'Raptor 700', model_he: 'Raptor 700', type: 'ATV' },
+      { brand: 'Yamaha', brand_he: 'יאמאהא', model: 'Grizzly 700', model_he: 'Grizzly 700', type: 'ATV' },
+      { brand: 'Yamaha', brand_he: 'יאמאהא', model: 'Wolverine', model_he: 'Wolverine', type: 'UTV' },
+      // Honda
+      { brand: 'Honda', brand_he: 'הונדה', model: 'TRX450R', model_he: 'TRX450R', type: 'ATV' },
+      { brand: 'Honda', brand_he: 'הונדה', model: 'TRX500', model_he: 'TRX500', type: 'ATV' },
+      { brand: 'Honda', brand_he: 'הונדה', model: 'Pioneer 1000', model_he: 'Pioneer 1000', type: 'UTV' },
+      { brand: 'Honda', brand_he: 'הונדה', model: 'Rancher', model_he: 'Rancher', type: 'ATV' },
+      // Polaris
+      { brand: 'Polaris', brand_he: 'פולאריס', model: 'RZR 1000', model_he: 'RZR 1000', type: 'UTV' },
+      { brand: 'Polaris', brand_he: 'פולאריס', model: 'Sportsman 850', model_he: 'Sportsman 850', type: 'ATV' },
+      { brand: 'Polaris', brand_he: 'פולאריס', model: 'Ranger', model_he: 'Ranger', type: 'UTV' },
+      // Can-Am
+      { brand: 'Can-Am', brand_he: 'קן-אם', model: 'Maverick X3', model_he: 'Maverick X3', type: 'UTV' },
+      { brand: 'Can-Am', brand_he: 'קן-אם', model: 'Outlander', model_he: 'Outlander', type: 'ATV' },
+      { brand: 'Can-Am', brand_he: 'קן-אם', model: 'Renegade', model_he: 'Renegade', type: 'ATV' },
+      // Kawasaki
+      { brand: 'Kawasaki', brand_he: 'קאווסאקי', model: 'KFX450R', model_he: 'KFX450R', type: 'ATV' },
+      { brand: 'Kawasaki', brand_he: 'קאווסאקי', model: 'Brute Force', model_he: 'Brute Force', type: 'ATV' },
+      { brand: 'Kawasaki', brand_he: 'קאווסאקי', model: 'Teryx', model_he: 'Teryx', type: 'UTV' },
+      // Suzuki
+      { brand: 'Suzuki', brand_he: 'סוזוקי', model: 'LTZ400', model_he: 'LTZ400', type: 'ATV' },
+      { brand: 'Suzuki', brand_he: 'סוזוקי', model: 'KingQuad', model_he: 'KingQuad', type: 'ATV' },
+    ];
+
+    for (const vehicle of vehicles) {
+      await pool.query(
+        `INSERT INTO vehicles (brand, brand_he, model, model_he, type) 
+         VALUES ($1, $2, $3, $4, $5) 
+         ON CONFLICT DO NOTHING`,
+        [vehicle.brand, vehicle.brand_he, vehicle.model, vehicle.model_he, vehicle.type]
+      );
+    }
+    console.log('Vehicles catalog seeded');
+
     // Categories
     const categories = [
       { name: 'Engines', name_he: 'מנועים', description: 'Engine parts and components' },
@@ -67,7 +106,7 @@ const seedData = async () => {
         sku: 'FIL-001',
         brand: 'DohelMoto',
         stock: 50,
-        compatible_models: ['Yamaha YFZ450', 'Honda TRX450']
+        compatible_models: ['Yamaha', 'YFZ450', 'Honda', 'TRX450']
       },
       {
         name: 'Brake Pad Set',
@@ -79,7 +118,7 @@ const seedData = async () => {
         sku: 'BRK-001',
         brand: 'DohelMoto',
         stock: 30,
-        compatible_models: ['Polaris RZR', 'Can-Am Maverick']
+        compatible_models: ['Polaris', 'RZR 1000', 'Can-Am', 'Maverick X3']
       },
       {
         name: 'Shock Absorber',
@@ -91,7 +130,7 @@ const seedData = async () => {
         sku: 'SUS-001',
         brand: 'DohelMoto',
         stock: 20,
-        compatible_models: ['Kawasaki KFX', 'Suzuki LTZ']
+        compatible_models: ['Kawasaki', 'KFX450R', 'Suzuki', 'LTZ400']
       },
       {
         name: 'Air Filter',
@@ -115,7 +154,7 @@ const seedData = async () => {
         sku: 'TRN-001',
         brand: 'DohelMoto',
         stock: 15,
-        compatible_models: ['Yamaha YFZ450', 'Honda TRX450']
+        compatible_models: ['Yamaha', 'YFZ450', 'Honda', 'TRX450R']
       },
       {
         name: 'Spark Plug Set',
@@ -151,7 +190,7 @@ const seedData = async () => {
         sku: 'BDY-001',
         brand: 'DohelMoto',
         stock: 35,
-        compatible_models: ['Polaris RZR', 'Can-Am Maverick']
+        compatible_models: ['Polaris', 'RZR 1000', 'Can-Am', 'Maverick X3']
       },
       {
         name: 'ATV Tire Set',
@@ -175,7 +214,7 @@ const seedData = async () => {
         sku: 'ENG-002',
         brand: 'DohelMoto',
         stock: 18,
-        compatible_models: ['Yamaha YFZ450', 'Honda TRX450']
+        compatible_models: ['Yamaha', 'YFZ450', 'Honda', 'TRX450R']
       },
     ];
 

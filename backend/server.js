@@ -84,7 +84,34 @@ const initDatabase = async () => {
         ) THEN
           ALTER TABLE users ADD COLUMN role VARCHAR(20) DEFAULT 'user';
         END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='users' AND column_name='vehicle_brand'
+        ) THEN
+          ALTER TABLE users ADD COLUMN vehicle_brand VARCHAR(100);
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='users' AND column_name='vehicle_model'
+        ) THEN
+          ALTER TABLE users ADD COLUMN vehicle_model VARCHAR(100);
+        END IF;
       END $$;
+    `);
+
+    // Vehicles catalog table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS vehicles (
+        id SERIAL PRIMARY KEY,
+        brand VARCHAR(100) NOT NULL,
+        brand_he VARCHAR(100) NOT NULL,
+        model VARCHAR(100) NOT NULL,
+        model_he VARCHAR(100) NOT NULL,
+        year_from INTEGER,
+        year_to INTEGER,
+        type VARCHAR(50),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
     `);
 
     // Categories table
@@ -249,10 +276,47 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
+// Vehicles catalog
+app.get('/api/vehicles', async (req, res) => {
+  try {
+    const { brand } = req.query;
+    let query = 'SELECT DISTINCT brand, brand_he FROM vehicles ORDER BY brand_he';
+    const params = [];
+    
+    if (brand) {
+      query = 'SELECT * FROM vehicles WHERE brand = $1 ORDER BY model_he';
+      params.push(brand);
+    }
+    
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching vehicles:', error);
+    res.status(500).json({ error: 'Failed to fetch vehicles' });
+  }
+});
+
+app.get('/api/vehicles/models', async (req, res) => {
+  try {
+    const { brand } = req.query;
+    if (!brand) {
+      return res.status(400).json({ error: 'Brand is required' });
+    }
+    const result = await pool.query(
+      'SELECT DISTINCT model, model_he FROM vehicles WHERE brand = $1 ORDER BY model_he',
+      [brand]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching vehicle models:', error);
+    res.status(500).json({ error: 'Failed to fetch vehicle models' });
+  }
+});
+
 // Products
 app.get('/api/products', async (req, res) => {
   try {
-    const { category_id, search, page = 1, limit = 20 } = req.query;
+    const { category_id, search, page = 1, limit = 20, vehicle_brand, vehicle_model } = req.query;
     let query = 'SELECT * FROM products WHERE 1=1';
     const params = [];
     let paramCount = 0;
@@ -267,6 +331,26 @@ app.get('/api/products', async (req, res) => {
       paramCount++;
       query += ` AND (name ILIKE $${paramCount} OR name_he ILIKE $${paramCount} OR description ILIKE $${paramCount})`;
       params.push(`%${search}%`);
+    }
+
+    // Filter by vehicle compatibility
+    if (vehicle_brand || vehicle_model) {
+      const vehicleFilter = [];
+      if (vehicle_brand) {
+        paramCount++;
+        // Search for brand in compatible_models array
+        vehicleFilter.push(`$${paramCount} = ANY(compatible_models)`);
+        params.push(vehicle_brand);
+      }
+      if (vehicle_model) {
+        paramCount++;
+        // Search for model in compatible_models array
+        vehicleFilter.push(`$${paramCount} = ANY(compatible_models)`);
+        params.push(vehicle_model);
+      }
+      if (vehicleFilter.length > 0) {
+        query += ` AND (${vehicleFilter.join(' OR ')})`;
+      }
     }
 
     const offset = (page - 1) * limit;
@@ -433,10 +517,39 @@ app.get('/api/orders/:userId', async (req, res) => {
   }
 });
 
+// Update user vehicle
+app.put('/api/user/vehicle', authenticateToken, async (req, res) => {
+  try {
+    const { vehicle_brand, vehicle_model } = req.body;
+    const result = await pool.query(
+      'UPDATE users SET vehicle_brand = $1, vehicle_model = $2 WHERE id = $3 RETURNING id, vehicle_brand, vehicle_model',
+      [vehicle_brand, vehicle_model, req.user.id]
+    );
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating user vehicle:', error);
+    res.status(500).json({ error: 'Failed to update vehicle' });
+  }
+});
+
+// Get user vehicle
+app.get('/api/user/vehicle', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT vehicle_brand, vehicle_model FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    res.json(result.rows[0] || { vehicle_brand: null, vehicle_model: null });
+  } catch (error) {
+    console.error('Error fetching user vehicle:', error);
+    res.status(500).json({ error: 'Failed to fetch vehicle' });
+  }
+});
+
 // User registration
 app.post('/api/register', async (req, res) => {
   try {
-    const { email, password, name, phone } = req.body;
+    const { email, password, name, phone, vehicle_brand, vehicle_model } = req.body;
     
     // Validation
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -475,8 +588,8 @@ app.post('/api/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     
     const result = await pool.query(
-      'INSERT INTO users (email, password, name, phone) VALUES ($1, $2, $3, $4) RETURNING id, email, name, phone',
-      [email, hashedPassword, name, phone]
+      'INSERT INTO users (email, password, name, phone, vehicle_brand, vehicle_model) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, email, name, phone, vehicle_brand, vehicle_model',
+      [email, hashedPassword, name, phone, vehicle_brand || null, vehicle_model || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {

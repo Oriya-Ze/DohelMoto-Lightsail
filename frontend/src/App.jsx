@@ -124,25 +124,87 @@ const Home = () => {
 const Products = () => {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
+  const [vehicles, setVehicles] = useState([])
+  const [vehicleModels, setVehicleModels] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
+  const [selectedVehicleBrand, setSelectedVehicleBrand] = useState('')
+  const [selectedVehicleModel, setSelectedVehicleModel] = useState('')
+  const user = JSON.parse(localStorage.getItem('user') || 'null')
 
   useEffect(() => {
     axios.get(`${API_URL}/categories`).then(res => setCategories(res.data))
+    axios.get(`${API_URL}/vehicles`).then(res => setVehicles(res.data))
+    loadUserVehicle()
     loadProducts()
-  }, [selectedCategory, search])
+  }, [])
+
+  useEffect(() => {
+    loadProducts()
+  }, [selectedCategory, search, selectedVehicleBrand, selectedVehicleModel])
+
+  useEffect(() => {
+    if (selectedVehicleBrand) {
+      axios.get(`${API_URL}/vehicles/models?brand=${selectedVehicleBrand}`).then(res => {
+        setVehicleModels(res.data)
+      })
+    } else {
+      setVehicleModels([])
+      setSelectedVehicleModel('')
+    }
+  }, [selectedVehicleBrand])
+
+  const loadUserVehicle = async () => {
+    if (user) {
+      try {
+        const token = localStorage.getItem('token')
+        const res = await axios.get(`${API_URL}/user/vehicle`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (res.data.vehicle_brand) {
+          setSelectedVehicleBrand(res.data.vehicle_brand)
+          if (res.data.vehicle_model) {
+            setSelectedVehicleModel(res.data.vehicle_model)
+          }
+        }
+      } catch (error) {
+        console.error('Error loading user vehicle:', error)
+      }
+    }
+  }
 
   const loadProducts = () => {
     setLoading(true)
     const params = new URLSearchParams()
     if (selectedCategory) params.append('category_id', selectedCategory)
     if (search) params.append('search', search)
+    if (selectedVehicleBrand) params.append('vehicle_brand', selectedVehicleBrand)
+    if (selectedVehicleModel) params.append('vehicle_model', selectedVehicleModel)
     
     axios.get(`${API_URL}/products?${params}`).then(res => {
       setProducts(res.data)
       setLoading(false)
     })
+  }
+
+  const handleSaveVehicle = async () => {
+    if (!user) {
+      alert('נא להתחבר כדי לשמור את כלי השטח שלך')
+      return
+    }
+    try {
+      const token = localStorage.getItem('token')
+      await axios.put(`${API_URL}/user/vehicle`, {
+        vehicle_brand: selectedVehicleBrand,
+        vehicle_model: selectedVehicleModel
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      alert('כלי השטח נשמר בהצלחה!')
+    } catch (error) {
+      alert('שגיאה בשמירת כלי השטח')
+    }
   }
 
   return (
@@ -164,13 +226,42 @@ const Products = () => {
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="input"
-            style={{ maxWidth: '300px' }}
+            style={{ maxWidth: '200px' }}
           >
             <option value="">כל הקטגוריות</option>
             {categories.map(cat => (
               <option key={cat.id} value={cat.id}>{cat.name_he}</option>
             ))}
           </select>
+          <select
+            value={selectedVehicleBrand}
+            onChange={(e) => setSelectedVehicleBrand(e.target.value)}
+            className="input"
+            style={{ maxWidth: '200px' }}
+          >
+            <option value="">כל המותגים</option>
+            {vehicles.map((v, idx) => (
+              <option key={idx} value={v.brand}>{v.brand_he}</option>
+            ))}
+          </select>
+          {selectedVehicleBrand && (
+            <select
+              value={selectedVehicleModel}
+              onChange={(e) => setSelectedVehicleModel(e.target.value)}
+              className="input"
+              style={{ maxWidth: '200px' }}
+            >
+              <option value="">כל הדגמים</option>
+              {vehicleModels.map((v, idx) => (
+                <option key={idx} value={v.model}>{v.model_he}</option>
+              ))}
+            </select>
+          )}
+          {user && selectedVehicleBrand && (
+            <button onClick={handleSaveVehicle} className="btn btn-outline" style={{ maxWidth: '150px' }}>
+              שמור כלי שטח
+            </button>
+          )}
         </div>
         {loading ? (
           <div className="loading">טוען מוצרים...</div>
@@ -595,6 +686,34 @@ const Login = () => {
                     className={`input ${errors.phone ? 'input-error' : ''}`}
                   />
                   {errors.phone && <div className="error-text">{errors.phone}</div>}
+                </div>
+                <div style={{ marginTop: '16px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                    כלי שטח שלי (אופציונלי)
+                  </label>
+                  <select
+                    value={formData.vehicle_brand}
+                    onChange={(e) => setFormData({ ...formData, vehicle_brand: e.target.value, vehicle_model: '' })}
+                    className="input"
+                    style={{ marginBottom: '12px' }}
+                  >
+                    <option value="">בחר מותג</option>
+                    {vehicles.map((v, idx) => (
+                      <option key={idx} value={v.brand}>{v.brand_he}</option>
+                    ))}
+                  </select>
+                  {formData.vehicle_brand && (
+                    <select
+                      value={formData.vehicle_model}
+                      onChange={(e) => setFormData({ ...formData, vehicle_model: e.target.value })}
+                      className="input"
+                    >
+                      <option value="">בחר דגם</option>
+                      {vehicleModels.map((v, idx) => (
+                        <option key={idx} value={v.model}>{v.model_he}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </>
             )}
