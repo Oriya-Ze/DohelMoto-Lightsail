@@ -60,7 +60,7 @@ const Home = () => {
     'צמיגים וג\'אנטים': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop',
     'חלקי פלסטיק': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop',
     'פגושים': 'https://images.unsplash.com/photo-1558980664-1a0d0e4b5c3d?w=600&h=400&fit=crop',
-    'אביזרים': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop',
+    'אביזרים': '/images/Accessories.png',
     'חלקי חילוף': 'https://images.unsplash.com/photo-1558980664-1a0d0e4b5c3d?w=600&h=400&fit=crop'
   }
 
@@ -395,7 +395,7 @@ const ProductCard = ({ product }) => {
         {product.stock !== undefined && (
           <p style={{ 
             fontSize: '12px', 
-            color: product.stock > 0 ? '#10b981' : '#dc2626',
+            color: product.stock > 0 ? '#10b981' : '#991b1b',
             marginBottom: '8px'
           }}>
             {product.stock > 0 ? `במלאי (${product.stock})` : 'אין במלאי'}
@@ -496,7 +496,7 @@ const ProductDetail = () => {
             {product.stock !== undefined && (
               <p style={{ 
                 fontSize: '16px', 
-                color: product.stock > 0 ? '#10b981' : '#dc2626',
+                color: product.stock > 0 ? '#10b981' : '#991b1b',
                 marginBottom: '16px',
                 fontWeight: '600'
               }}>
@@ -892,14 +892,14 @@ const Login = () => {
                           flex: 1,
                           height: '4px',
                           background: level <= passwordStrength.strength 
-                            ? level <= 2 ? '#dc2626' : level <= 3 ? '#f59e0b' : '#10b981'
+                            ? level <= 2 ? '#991b1b' : level <= 3 ? '#f59e0b' : '#10b981'
                             : '#e5e7eb',
                           borderRadius: '2px'
                         }}
                       />
                     ))}
                   </div>
-                  <div style={{ fontSize: '12px', color: passwordStrength.strength <= 2 ? '#dc2626' : passwordStrength.strength <= 3 ? '#f59e0b' : '#10b981' }}>
+                  <div style={{ fontSize: '12px', color: passwordStrength.strength <= 2 ? '#991b1b' : passwordStrength.strength <= 3 ? '#f59e0b' : '#10b981' }}>
                     חוזק סיסמה: {passwordStrength.text}
                   </div>
                 </div>
