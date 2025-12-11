@@ -22,7 +22,7 @@ const Header = ({ cartCount, user, onLogout }) => {
           <nav className={`nav ${menuOpen ? 'nav-open' : ''}`}>
             <Link to="/" onClick={() => setMenuOpen(false)}>בית</Link>
             <Link to="/products" onClick={() => setMenuOpen(false)}>מוצרים</Link>
-            <Link to="/products" onClick={() => setMenuOpen(false)}>קטגוריות</Link>
+            <Link to="/categories" onClick={() => setMenuOpen(false)}>קטגוריות</Link>
             <Link to="/about" onClick={() => setMenuOpen(false)}>אודות</Link>
             <Link to="/customer-service" onClick={() => setMenuOpen(false)}>שירות לקוחות</Link>
             {user ? (
@@ -116,6 +116,55 @@ const Home = () => {
           </div>
         </div>
       </section>
+    </div>
+  )
+}
+
+const Categories = () => {
+  const [categories, setCategories] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    axios.get(`${API_URL}/categories`).then(res => {
+      setCategories(res.data)
+      setLoading(false)
+    })
+  }, [])
+
+  const categoryImages = {
+    'צמיגים וג\'אנטים': 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop',
+    'חלקי פלסטיק': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop',
+    'פגושים': 'https://images.unsplash.com/photo-1558980664-1a0d0e4b5c3d?w=600&h=400&fit=crop',
+    'אביזרים': '/images/Accessories.png',
+    'חלקי חילוף': 'https://images.unsplash.com/photo-1558980664-1a0d0e4b5c3d?w=600&h=400&fit=crop'
+  }
+
+  if (loading) return <div className="loading">טוען קטגוריות...</div>
+
+  return (
+    <div className="section">
+      <div className="container">
+        <h2 className="section-title">כל הקטגוריות</h2>
+        <div className="grid grid-3">
+          {categories.map(cat => (
+            <Link 
+              key={cat.id} 
+              to={`/products?category=${cat.id}`} 
+              className="card category-card"
+              style={{ 
+                backgroundImage: `url(${categoryImages[cat.name_he] || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop'})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            >
+              <div className="category-overlay">
+                <h3>{cat.name_he}</h3>
+                <p>{cat.description}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
@@ -479,7 +528,7 @@ const ProductDetail = () => {
                           objectFit: 'cover',
                           borderRadius: '4px',
                           cursor: 'pointer',
-                          border: selectedImage === idx ? '3px solid #ffffff' : '1px solid #e5e7eb',
+                          border: selectedImage === idx ? '3px solid #d97706' : '1px solid #e5e7eb',
                           opacity: selectedImage === idx ? 1 : 0.7
                         }}
                       />
@@ -1194,6 +1243,7 @@ function App() {
         <main>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/categories" element={<Categories />} />
             <Route path="/products" element={<Products />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
