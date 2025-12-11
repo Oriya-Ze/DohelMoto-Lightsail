@@ -2,6 +2,13 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
+
+main {
+  position: relative;
+  z-index: 2;
 }
 
 /* Header */
@@ -144,16 +151,18 @@
 .section {
   padding: 60px 0;
   position: relative;
-  z-index: 5;
+  z-index: 10;
+  min-height: 400px;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%) !important;
 }
 
 .section:nth-child(even) {
-  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%) !important;
   backdrop-filter: blur(10px);
 }
 
 .section:nth-child(odd) {
-  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%) !important;
   backdrop-filter: blur(10px);
 }
 
