@@ -22,7 +22,7 @@ const Header = ({ cartCount, user, onLogout }) => {
           <nav className={`nav ${menuOpen ? 'nav-open' : ''}`}>
             <Link to="/" onClick={() => setMenuOpen(false)}>בית</Link>
             <Link to="/products" onClick={() => setMenuOpen(false)}>מוצרים</Link>
-            <Link to="/categories" onClick={() => setMenuOpen(false)}>קטגוריות</Link>
+            <Link to="/products" onClick={() => setMenuOpen(false)}>קטגוריות</Link>
             <Link to="/about" onClick={() => setMenuOpen(false)}>אודות</Link>
             <Link to="/customer-service" onClick={() => setMenuOpen(false)}>שירות לקוחות</Link>
             {user ? (
