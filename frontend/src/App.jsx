@@ -528,7 +528,7 @@ const ProductDetail = () => {
                           objectFit: 'cover',
                           borderRadius: '4px',
                           cursor: 'pointer',
-                          border: selectedImage === idx ? '3px solid #d97706' : '1px solid #e5e7eb',
+                          border: selectedImage === idx ? '3px solid #ea580c' : '1px solid #e5e7eb',
                           opacity: selectedImage === idx ? 1 : 0.7
                         }}
                       />
