@@ -839,10 +839,40 @@ const Login = () => {
   }
 
   return (
-    <div className="section">
-      <div className="container" style={{ maxWidth: '500px' }}>
-        <div className="card">
-          <h2>{isLogin ? 'התחברות' : 'הרשמה'}</h2>
+    <div style={{ 
+      position: 'fixed', 
+      top: 0, 
+      left: 0, 
+      right: 0, 
+      bottom: 0, 
+      zIndex: 9999, 
+      background: 'rgba(255, 255, 255, 0.98)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'auto',
+      padding: '20px'
+    }}>
+      <div className="section" style={{ 
+        position: 'relative', 
+        zIndex: 10000, 
+        background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)',
+        padding: '40px',
+        borderRadius: '12px',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+        maxWidth: '500px',
+        width: '100%',
+        margin: 'auto'
+      }}>
+        <div className="container" style={{ maxWidth: '100%', position: 'relative', zIndex: 10001 }}>
+          <div className="card" style={{ 
+            position: 'relative', 
+            zIndex: 10002, 
+            background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)',
+            boxShadow: 'none',
+            border: '1px solid rgba(107, 114, 128, 0.3)'
+          }}>
+            <h2>{isLogin ? 'התחברות' : 'הרשמה'}</h2>
           <form onSubmit={handleSubmit}>
             {errors.submit && (
               <div className="error-message" style={{ marginBottom: '16px', padding: '12px', background: '#fee2e2', color: '#991b1b', borderRadius: '6px' }}>
@@ -967,6 +997,7 @@ const Login = () => {
           >
             {isLogin ? 'אין לך חשבון? הירשם' : 'יש לך חשבון? התחבר'}
           </button>
+        </div>
         </div>
       </div>
     </div>
