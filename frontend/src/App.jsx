@@ -23,6 +23,8 @@ const Header = ({ cartCount, user, onLogout }) => {
             <Link to="/" onClick={() => setMenuOpen(false)}>בית</Link>
             <Link to="/products" onClick={() => setMenuOpen(false)}>מוצרים</Link>
             <Link to="/categories" onClick={() => setMenuOpen(false)}>קטגוריות</Link>
+            <Link to="/about" onClick={() => setMenuOpen(false)}>אודות</Link>
+            <Link to="/customer-service" onClick={() => setMenuOpen(false)}>שירות לקוחות</Link>
             {user ? (
               <>
                 <Link to="/orders" onClick={() => setMenuOpen(false)}>ההזמנות שלי</Link>
@@ -922,6 +924,195 @@ const Login = () => {
   )
 }
 
+const About = () => {
+  return (
+    <div className="section">
+      <div className="container">
+        <div className="card" style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <h1 className="section-title" style={{ marginBottom: '40px', color: '#1f2937' }}>אודות DohelMoto</h1>
+          
+          <div style={{ lineHeight: '1.8', fontSize: '18px' }}>
+            <h2 style={{ color: '#991b1b', marginTop: '32px', marginBottom: '16px' }}>מי אנחנו?</h2>
+            <p style={{ marginBottom: '24px' }}>
+              DohelMoto היא החברה המובילה בישראל למכירת חלקי חילוף איכותיים לטרקטורונים, כלי שטח ורכבי שטח.
+              אנו מתמחים במתן פתרונות מקצועיים לכל בעלי כלי השטח, מנוסים ומתחילים כאחד.
+            </p>
+
+            <h2 style={{ color: '#991b1b', marginTop: '32px', marginBottom: '16px' }}>החזון שלנו</h2>
+            <p style={{ marginBottom: '24px' }}>
+              להיות המקום הראשון והאמין ביותר לרכישת חלקי חילוף לכלי שטח בישראל.
+              אנו מחויבים לספק מוצרים איכותיים, שירות מקצועי ומחירים הוגנים לכל הלקוחות שלנו.
+            </p>
+
+            <h2 style={{ color: '#991b1b', marginTop: '32px', marginBottom: '16px' }}>מה אנחנו מציעים?</h2>
+            <ul style={{ marginBottom: '24px', paddingRight: '24px' }}>
+              <li style={{ marginBottom: '12px' }}>מגוון רחב של חלקי חילוף לכל המותגים המובילים</li>
+              <li style={{ marginBottom: '12px' }}>צמיגים וג'אנטים לכל סוגי כלי השטח</li>
+              <li style={{ marginBottom: '12px' }}>חלקי פלסטיק ופגושים עמידים</li>
+              <li style={{ marginBottom: '12px' }}>אביזרים וציוד נלווה מקצועי</li>
+              <li style={{ marginBottom: '12px' }}>שירות לקוחות מקצועי ואדיב</li>
+              <li style={{ marginBottom: '12px' }}>משלוחים מהירים ברחבי הארץ</li>
+            </ul>
+
+            <h2 style={{ color: '#991b1b', marginTop: '32px', marginBottom: '16px' }}>למה לבחור בנו?</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginTop: '24px' }}>
+              <div className="card" style={{ textAlign: 'center', padding: '20px' }}>
+                <h3 style={{ color: '#991b1b', marginBottom: '12px' }}>איכות מוכחת</h3>
+                <p>כל המוצרים שלנו עוברים בדיקות איכות קפדניות</p>
+              </div>
+              <div className="card" style={{ textAlign: 'center', padding: '20px' }}>
+                <h3 style={{ color: '#991b1b', marginBottom: '12px' }}>מחירים תחרותיים</h3>
+                <p>המחירים הטובים ביותר בשוק עם אחריות מלאה</p>
+              </div>
+              <div className="card" style={{ textAlign: 'center', padding: '20px' }}>
+                <h3 style={{ color: '#991b1b', marginBottom: '12px' }}>שירות מהיר</h3>
+                <p>משלוחים מהירים ושירות לקוחות 24/7</p>
+              </div>
+              <div className="card" style={{ textAlign: 'center', padding: '20px' }}>
+                <h3 style={{ color: '#991b1b', marginBottom: '12px' }}>מומחיות</h3>
+                <p>צוות מקצועי עם ניסיון של שנים בתחום</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const CustomerService = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    subject: '',
+    message: ''
+  })
+  const [submitted, setSubmitted] = useState(false)
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    // כאן תוכל להוסיף שליחה לשרת
+    console.log('Contact form submitted:', formData)
+    setSubmitted(true)
+    setTimeout(() => {
+      setSubmitted(false)
+      setFormData({ name: '', email: '', phone: '', subject: '', message: '' })
+    }, 3000)
+  }
+
+  return (
+    <div className="section">
+      <div className="container">
+        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <h1 className="section-title" style={{ marginBottom: '40px', color: '#1f2937' }}>שירות לקוחות</h1>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px', marginBottom: '40px' }}>
+            <div className="card">
+              <h2 style={{ color: '#991b1b', marginBottom: '20px' }}>פרטי יצירת קשר</h2>
+              <div style={{ lineHeight: '2' }}>
+                <p><strong>טלפון:</strong> 1-800-DOHEL-MOTO</p>
+                <p><strong>אימייל:</strong> info@dohelmoto.co.il</p>
+                <p><strong>כתובת:</strong> ישראל</p>
+                <p><strong>שעות פעילות:</strong></p>
+                <ul style={{ paddingRight: '20px', marginTop: '8px' }}>
+                  <li>ראשון - חמישי: 09:00 - 18:00</li>
+                  <li>שישי: 09:00 - 14:00</li>
+                  <li>שבת: סגור</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="card">
+              <h2 style={{ color: '#991b1b', marginBottom: '20px' }}>שאלות נפוצות</h2>
+              <div style={{ lineHeight: '1.8' }}>
+                <h3 style={{ color: '#991b1b', fontSize: '18px', marginTop: '16px', marginBottom: '8px' }}>מה זמן המשלוח?</h3>
+                <p style={{ marginBottom: '16px' }}>משלוחים ברחבי הארץ תוך 2-5 ימי עסקים.</p>
+                
+                <h3 style={{ color: '#991b1b', fontSize: '18px', marginTop: '16px', marginBottom: '8px' }}>מה מדיניות ההחזרות?</h3>
+                <p style={{ marginBottom: '16px' }}>ניתן להחזיר מוצרים תוך 14 ימים ממועד הרכישה.</p>
+                
+                <h3 style={{ color: '#991b1b', fontSize: '18px', marginTop: '16px', marginBottom: '8px' }}>האם יש אחריות?</h3>
+                <p style={{ marginBottom: '16px' }}>כל המוצרים מגיעים עם אחריות מלאה מהיצרן.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <h2 style={{ color: '#991b1b', marginBottom: '24px' }}>צור קשר</h2>
+            {submitted ? (
+              <div style={{ padding: '20px', background: '#d1fae5', borderRadius: '8px', textAlign: 'center', color: '#065f46' }}>
+                <p style={{ fontSize: '18px', fontWeight: '600' }}>תודה! פניתך התקבלה ונחזור אליך בהקדם.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>שם מלא *</label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="input"
+                    required
+                  />
+                </div>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>אימייל *</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="input"
+                    required
+                  />
+                </div>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>טלפון</label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="input"
+                  />
+                </div>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>נושא *</label>
+                  <select
+                    value={formData.subject}
+                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                    className="input"
+                    required
+                  >
+                    <option value="">בחר נושא</option>
+                    <option value="order">שאלה על הזמנה</option>
+                    <option value="product">שאלה על מוצר</option>
+                    <option value="shipping">שאלה על משלוח</option>
+                    <option value="return">החזרת מוצר</option>
+                    <option value="other">אחר</option>
+                  </select>
+                </div>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>הודעה *</label>
+                  <textarea
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    className="input"
+                    rows="5"
+                    required
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
+                  שלח פנייה
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const Orders = () => {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -1008,6 +1199,8 @@ function App() {
             <Route path="/cart" element={<Cart />} />
             <Route path="/login" element={<Login />} />
             <Route path="/orders" element={<Orders />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/customer-service" element={<CustomerService />} />
             <Route path="/admin" element={user && user.role === 'admin' ? <AdminPanel user={user} onLogout={handleLogout} /> : <Login />} />
             <Route path="/payment/success" element={<PaymentCallback type="success" />} />
             <Route path="/payment/cancel" element={<PaymentCallback type="cancel" />} />
