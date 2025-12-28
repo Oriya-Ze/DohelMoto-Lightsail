@@ -513,7 +513,7 @@ const ProductDetail = () => {
           <div className="product-detail-image">
             {productImages.length > 0 ? (
               <>
-                <img src={productImages[selectedImage]} alt={product.name_he} style={{ width: '100%', borderRadius: '8px' }} />
+                <img src={productImages[selectedImage]} alt={product.name_he} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '8px' }} />
                 {productImages.length > 1 && (
                   <div style={{ display: 'flex', gap: '8px', marginTop: '16px', flexWrap: 'wrap' }}>
                     {productImages.map((img, idx) => (
@@ -525,11 +525,12 @@ const ProductDetail = () => {
                         style={{
                           width: '80px',
                           height: '80px',
-                          objectFit: 'cover',
+                          objectFit: 'contain',
                           borderRadius: '4px',
                           cursor: 'pointer',
                           border: selectedImage === idx ? '3px solid #ea580c' : '1px solid #e5e7eb',
-                          opacity: selectedImage === idx ? 1 : 0.7
+                          opacity: selectedImage === idx ? 1 : 0.7,
+                          backgroundColor: '#f3f4f6'
                         }}
                       />
                     ))}
@@ -723,6 +724,14 @@ const Login = () => {
   const [emailExists, setEmailExists] = useState(false)
   const navigate = useNavigate()
 
+  useEffect(() => {
+    // Ensure the login form is visible
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = 'auto'
+    }
+  }, [])
+
   // Check password strength
   const checkPasswordStrength = (password) => {
     let strength = 0
@@ -839,40 +848,37 @@ const Login = () => {
   }
 
   return (
-    <div style={{ 
+    <div className="login-wrapper" style={{ 
       position: 'fixed', 
       top: 0, 
       left: 0, 
       right: 0, 
       bottom: 0, 
-      zIndex: 9999, 
-      background: 'rgba(255, 255, 255, 0.98)',
+      zIndex: '999999', 
+      backgroundColor: '#ffffff',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       overflow: 'auto',
-      padding: '20px'
+      padding: '20px',
+      width: '100vw',
+      height: '100vh',
+      margin: 0,
+      boxSizing: 'border-box'
     }}>
-      <div className="section" style={{ 
+      <div style={{ 
         position: 'relative', 
-        zIndex: 10000, 
-        background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)',
+        zIndex: '1000000', 
+        backgroundColor: '#ffffff',
         padding: '40px',
         borderRadius: '12px',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
         maxWidth: '500px',
         width: '100%',
-        margin: 'auto'
+        border: '1px solid rgba(107, 114, 128, 0.3)',
+        boxSizing: 'border-box'
       }}>
-        <div className="container" style={{ maxWidth: '100%', position: 'relative', zIndex: 10001 }}>
-          <div className="card" style={{ 
-            position: 'relative', 
-            zIndex: 10002, 
-            background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)',
-            boxShadow: 'none',
-            border: '1px solid rgba(107, 114, 128, 0.3)'
-          }}>
-            <h2>{isLogin ? 'התחברות' : 'הרשמה'}</h2>
+        <h2 style={{ marginBottom: '24px', color: '#111827', fontSize: '28px', fontWeight: 'bold', display: 'block' }}>{isLogin ? 'התחברות' : 'הרשמה'}</h2>
           <form onSubmit={handleSubmit}>
             {errors.submit && (
               <div className="error-message" style={{ marginBottom: '16px', padding: '12px', background: '#fee2e2', color: '#991b1b', borderRadius: '6px' }}>
@@ -990,15 +996,13 @@ const Login = () => {
               {isLogin ? 'התחבר' : 'הירשם'}
             </button>
           </form>
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            className="btn btn-outline"
-            style={{ width: '100%', marginTop: '16px' }}
-          >
-            {isLogin ? 'אין לך חשבון? הירשם' : 'יש לך חשבון? התחבר'}
-          </button>
-        </div>
-        </div>
+        <button
+          onClick={() => setIsLogin(!isLogin)}
+          className="btn btn-outline"
+          style={{ width: '100%', marginTop: '16px' }}
+        >
+          {isLogin ? 'אין לך חשבון? הירשם' : 'יש לך חשבון? התחבר'}
+        </button>
       </div>
     </div>
   )

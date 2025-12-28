@@ -583,3 +583,4 @@ const CategoryModal = ({ formData, setFormData, onSubmit, onClose, editing }) =>
 export default AdminPanel
 
 
+
