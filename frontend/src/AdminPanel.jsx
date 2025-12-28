@@ -154,6 +154,7 @@ const ProductsTab = ({ products, loading, onAdd, onEdit, onDelete, showModal, ed
     description: '',
     description_he: '',
     price: '',
+    sale_price: '',
     category_id: '',
     image_url: '',
     images: [],
@@ -180,6 +181,7 @@ const ProductsTab = ({ products, loading, onAdd, onEdit, onDelete, showModal, ed
         description: '',
         description_he: '',
         price: '',
+        sale_price: '',
         category_id: '',
         image_url: '',
         images: [],
@@ -198,6 +200,7 @@ const ProductsTab = ({ products, loading, onAdd, onEdit, onDelete, showModal, ed
       const data = {
         ...formData,
         price: parseFloat(formData.price),
+        sale_price: formData.sale_price ? parseFloat(formData.sale_price) : null,
         stock: parseInt(formData.stock),
         category_id: parseInt(formData.category_id),
         images: Array.isArray(formData.images) ? formData.images.filter(img => img.trim()) : [],
@@ -479,6 +482,18 @@ const ProductModal = ({ formData, setFormData, onSubmit, onClose, editing }) => 
                 required
               />
             </div>
+            <div className="form-group">
+              <label>מחיר מבצע (₪) - אופציונלי</label>
+              <input 
+                type="number" 
+                step="0.01"
+                value={formData.sale_price} 
+                onChange={(e) => setFormData({...formData, sale_price: e.target.value})}
+                placeholder="השאר ריק אם אין מבצע"
+              />
+            </div>
+          </div>
+          <div className="form-row">
             <div className="form-group">
               <label>מלאי</label>
               <input 

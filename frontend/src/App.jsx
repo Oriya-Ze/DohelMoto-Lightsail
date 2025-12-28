@@ -469,7 +469,14 @@ const ProductCard = ({ product }) => {
       <div className="product-info">
         <h3>{product.name_he}</h3>
         <p className="product-sku">מק"ט: {product.sku}</p>
-        <p className="product-price">₪{parseFloat(product.price || 0).toFixed(2)}</p>
+        {product.sale_price && parseFloat(product.sale_price) < parseFloat(product.price) ? (
+          <div className="product-price-container">
+            <p className="product-price original-price">₪{parseFloat(product.price || 0).toFixed(2)}</p>
+            <p className="product-price sale-price">₪{parseFloat(product.sale_price || 0).toFixed(2)}</p>
+          </div>
+        ) : (
+          <p className="product-price">₪{parseFloat(product.price || 0).toFixed(2)}</p>
+        )}
         {product.stock !== undefined && (
           <p style={{ 
             fontSize: '12px', 
@@ -656,7 +663,14 @@ const ProductDetail = () => {
           <div className="product-detail-info">
             <h1>{product.name_he}</h1>
             <p className="product-sku">מק"ט: {product.sku}</p>
-            <p className="product-price large">₪{parseFloat(product.price || 0).toFixed(2)}</p>
+            {product.sale_price && parseFloat(product.sale_price) < parseFloat(product.price) ? (
+              <div className="product-price-container">
+                <p className="product-price large original-price">₪{parseFloat(product.price || 0).toFixed(2)}</p>
+                <p className="product-price large sale-price">₪{parseFloat(product.sale_price || 0).toFixed(2)}</p>
+              </div>
+            ) : (
+              <p className="product-price large">₪{parseFloat(product.price || 0).toFixed(2)}</p>
+            )}
             {product.stock !== undefined && (
               <p style={{ 
                 fontSize: '16px', 
@@ -755,7 +769,12 @@ const Cart = () => {
       })
       
       const order = orderRes.data
-      const total = cartItems.reduce((sum, item) => sum + (parseFloat(item.price || 0) * item.quantity), 0)
+      const total = cartItems.reduce((sum, item) => {
+        const itemPrice = item.sale_price && parseFloat(item.sale_price) < parseFloat(item.price) 
+          ? parseFloat(item.sale_price) 
+          : parseFloat(item.price || 0);
+        return sum + (itemPrice * item.quantity);
+      }, 0)
       
       // Initialize Cardcom payment
       const token = localStorage.getItem('token')
@@ -783,7 +802,12 @@ const Cart = () => {
 
   if (loading) return <div className="loading">טוען עגלה...</div>
 
-  const total = cartItems.reduce((sum, item) => sum + (parseFloat(item.price || 0) * item.quantity), 0)
+  const total = cartItems.reduce((sum, item) => {
+    const itemPrice = item.sale_price && parseFloat(item.sale_price) < parseFloat(item.price) 
+      ? parseFloat(item.sale_price) 
+      : parseFloat(item.price || 0);
+    return sum + (itemPrice * item.quantity);
+  }, 0)
 
   return (
     <div className="section">
@@ -801,7 +825,18 @@ const Cart = () => {
                 <div key={item.id} className="card cart-item">
                   <div className="cart-item-info">
                     <h3>{item.name_he}</h3>
-                    <p>₪{parseFloat(item.price || 0).toFixed(2)} × {item.quantity} = ₪{(parseFloat(item.price || 0) * item.quantity).toFixed(2)}</p>
+                    {item.sale_price && parseFloat(item.sale_price) < parseFloat(item.price) ? (
+                      <div>
+                        <p style={{ textDecoration: 'line-through', color: '#6b7280', marginBottom: '4px' }}>
+                          ₪{parseFloat(item.price || 0).toFixed(2)} × {item.quantity} = ₪{(parseFloat(item.price || 0) * item.quantity).toFixed(2)}
+                        </p>
+                        <p style={{ color: '#dc2626', fontWeight: 'bold' }}>
+                          ₪{parseFloat(item.sale_price || 0).toFixed(2)} × {item.quantity} = ₪{(parseFloat(item.sale_price || 0) * item.quantity).toFixed(2)}
+                        </p>
+                      </div>
+                    ) : (
+                      <p>₪{parseFloat(item.price || 0).toFixed(2)} × {item.quantity} = ₪{(parseFloat(item.price || 0) * item.quantity).toFixed(2)}</p>
+                    )}
                   </div>
                   <div className="cart-item-actions">
                     <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="btn btn-secondary">-</button>

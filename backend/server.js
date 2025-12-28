@@ -170,6 +170,12 @@ const initDatabase = async () => {
         ) THEN
           ALTER TABLE products ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
         END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='products' AND column_name='sale_price'
+        ) THEN
+          ALTER TABLE products ADD COLUMN sale_price DECIMAL(10, 2);
+        END IF;
       END $$;
     `);
 
@@ -392,7 +398,7 @@ app.get('/api/cart/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     const result = await pool.query(
-      `SELECT c.*, p.name, p.name_he, p.price, p.image_url, p.stock 
+      `SELECT c.*, p.name, p.name_he, p.price, p.sale_price, p.image_url, p.stock 
        FROM cart c 
        JOIN products p ON c.product_id = p.id 
        WHERE c.user_id = $1`,
@@ -462,8 +468,12 @@ app.post('/api/orders', async (req, res) => {
     // Calculate total
     let total = 0;
     for (const item of items) {
-      const productResult = await client.query('SELECT price FROM products WHERE id = $1', [item.product_id]);
-      total += parseFloat(productResult.rows[0].price) * item.quantity;
+      const productResult = await client.query('SELECT price, sale_price FROM products WHERE id = $1', [item.product_id]);
+      const product = productResult.rows[0];
+      const itemPrice = product.sale_price && parseFloat(product.sale_price) < parseFloat(product.price) 
+        ? parseFloat(product.sale_price) 
+        : parseFloat(product.price);
+      total += itemPrice * item.quantity;
     }
 
     // Create order
@@ -476,11 +486,15 @@ app.post('/api/orders', async (req, res) => {
 
     // Create order items
     for (const item of items) {
-      const productResult = await client.query('SELECT price FROM products WHERE id = $1', [item.product_id]);
+      const productResult = await client.query('SELECT price, sale_price FROM products WHERE id = $1', [item.product_id]);
+      const product = productResult.rows[0];
+      const itemPrice = product.sale_price && parseFloat(product.sale_price) < parseFloat(product.price) 
+        ? parseFloat(product.sale_price) 
+        : parseFloat(product.price);
       await client.query(
         `INSERT INTO order_items (order_id, product_id, quantity, price) 
          VALUES ($1, $2, $3, $4)`,
-        [order.id, item.product_id, item.quantity, productResult.rows[0].price]
+        [order.id, item.product_id, item.quantity, itemPrice]
       );
     }
 
@@ -646,11 +660,11 @@ app.post('/api/login', async (req, res) => {
 // Admin Routes - Product Management
 app.post('/api/admin/products', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { name, name_he, description, description_he, price, category_id, image_url, images, stock, sku, brand, compatible_models } = req.body;
+    const { name, name_he, description, description_he, price, sale_price, category_id, image_url, images, stock, sku, brand, compatible_models } = req.body;
     const result = await pool.query(
-      `INSERT INTO products (name, name_he, description, description_he, price, category_id, image_url, images, stock, sku, brand, compatible_models) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
-      [name, name_he, description, description_he, price, category_id, image_url, images || [], stock, sku, brand, compatible_models || []]
+      `INSERT INTO products (name, name_he, description, description_he, price, sale_price, category_id, image_url, images, stock, sku, brand, compatible_models) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
+      [name, name_he, description, description_he, price, sale_price || null, category_id, image_url, images || [], stock, sku, brand, compatible_models || []]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -662,14 +676,14 @@ app.post('/api/admin/products', authenticateToken, requireAdmin, async (req, res
 app.put('/api/admin/products/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, name_he, description, description_he, price, category_id, image_url, images, stock, sku, brand, compatible_models, is_active } = req.body;
+    const { name, name_he, description, description_he, price, sale_price, category_id, image_url, images, stock, sku, brand, compatible_models, is_active } = req.body;
     const result = await pool.query(
       `UPDATE products 
-       SET name = $1, name_he = $2, description = $3, description_he = $4, price = $5, category_id = $6, 
-           image_url = $7, images = $8, stock = $9, sku = $10, brand = $11, compatible_models = $12, 
-           is_active = $13, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $14 RETURNING *`,
-      [name, name_he, description, description_he, price, category_id, image_url, images || [], stock, sku, brand, compatible_models || [], is_active !== undefined ? is_active : true, id]
+       SET name = $1, name_he = $2, description = $3, description_he = $4, price = $5, sale_price = $6, category_id = $7, 
+           image_url = $8, images = $9, stock = $10, sku = $11, brand = $12, compatible_models = $13, 
+           is_active = $14, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $15 RETURNING *`,
+      [name, name_he, description, description_he, price, sale_price || null, category_id, image_url, images || [], stock, sku, brand, compatible_models || [], is_active !== undefined ? is_active : true, id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Product not found' });
