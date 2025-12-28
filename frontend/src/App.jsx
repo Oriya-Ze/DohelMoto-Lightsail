@@ -16,7 +16,7 @@ const Header = ({ cartCount, user, onLogout }) => {
       <div className="container">
         <div className="header-content">
           <Link to="/" className="logo">
-            <img src="/images/logo.jpg" alt="DohelMoto" style={{ maxHeight: '60px', width: 'auto' }} />
+            <img src="/images/logo.png" alt="DohelMoto" style={{ maxHeight: '60px', width: 'auto' }} />
           </Link>
           <nav className={`nav ${menuOpen ? 'nav-open' : ''}`}>
             <Link to="/" onClick={() => setMenuOpen(false)}>בית</Link>
