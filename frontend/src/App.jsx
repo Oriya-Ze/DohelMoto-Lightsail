@@ -488,8 +488,16 @@ const ProductDetail = () => {
 
   const productImages = product ? [
     product.image_url,
-    ...(product.images || [])
+    ...(Array.isArray(product.images) ? product.images : [])
   ].filter(Boolean) : []
+
+  // Debug: log images
+  useEffect(() => {
+    if (product) {
+      console.log('Product images:', productImages)
+      console.log('Selected image index:', selectedImage)
+    }
+  }, [product, productImages, selectedImage])
 
   // Keyboard navigation
   useEffect(() => {
@@ -590,9 +598,14 @@ const ProductDetail = () => {
                     </>
                   )}
                   <img 
+                    key={selectedImage}
                     src={productImages[selectedImage]} 
                     alt={`${product.name_he} - תמונה ${selectedImage + 1}`} 
-                    style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '8px' }} 
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '8px' }}
+                    onError={(e) => {
+                      console.error('Image failed to load:', productImages[selectedImage])
+                      e.target.style.display = 'none'
+                    }}
                   />
                 </div>
                 {productImages.length > 1 && (
