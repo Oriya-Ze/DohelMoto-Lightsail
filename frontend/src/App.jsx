@@ -93,15 +93,20 @@ const Home = () => {
           <div className="grid grid-3">
             {categories.slice(0, 6).map(cat => {
               const imageUrl = cat.image_url || categoryImages[cat.name_he] || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop'
+              console.log(`Category ${cat.name_he} (id: ${cat.id}): image_url=${cat.image_url}, finalUrl=${imageUrl}`)
               return (
               <Link 
                 key={`${cat.id}-${cat.image_url || 'default'}`}
                 to={`/products?category=${cat.id}`} 
                 className="card category-card"
                 style={{ 
-                  backgroundImage: `url(${imageUrl})`,
+                  backgroundImage: imageUrl ? `url("${imageUrl}")` : 'none',
                   backgroundSize: 'cover',
-                  backgroundPosition: 'center'
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat'
+                }}
+                onError={(e) => {
+                  console.error(`Failed to load image for category ${cat.name_he}:`, imageUrl)
                 }}
               >
                 <div className="category-overlay">
@@ -167,15 +172,20 @@ const Categories = () => {
           <div className="grid grid-3">
             {categories.map(cat => {
               const imageUrl = cat.image_url || categoryImages[cat.name_he] || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop'
+              console.log(`Category ${cat.name_he} (id: ${cat.id}): image_url=${cat.image_url}, finalUrl=${imageUrl}`)
               return (
               <Link 
                 key={`${cat.id}-${cat.image_url || 'default'}`}
                 to={`/products?category=${cat.id}`} 
                 className="card category-card"
                 style={{ 
-                  backgroundImage: `url(${imageUrl})`,
+                  backgroundImage: imageUrl ? `url("${imageUrl}")` : 'none',
                   backgroundSize: 'cover',
-                  backgroundPosition: 'center'
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat'
+                }}
+                onError={(e) => {
+                  console.error(`Failed to load image for category ${cat.name_he}:`, imageUrl)
                 }}
               >
               <div className="category-overlay">
