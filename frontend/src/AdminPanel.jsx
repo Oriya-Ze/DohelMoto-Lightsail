@@ -156,6 +156,7 @@ const ProductsTab = ({ products, loading, onAdd, onEdit, onDelete, showModal, ed
     price: '',
     category_id: '',
     image_url: '',
+    images: [],
     stock: '',
     sku: '',
     brand: '',
@@ -167,6 +168,7 @@ const ProductsTab = ({ products, loading, onAdd, onEdit, onDelete, showModal, ed
     if (editingProduct) {
       setFormData({
         ...editingProduct,
+        images: Array.isArray(editingProduct.images) ? editingProduct.images : [],
         compatible_models: Array.isArray(editingProduct.compatible_models) 
           ? editingProduct.compatible_models.join(', ') 
           : editingProduct.compatible_models || ''
@@ -180,6 +182,7 @@ const ProductsTab = ({ products, loading, onAdd, onEdit, onDelete, showModal, ed
         price: '',
         category_id: '',
         image_url: '',
+        images: [],
         stock: '',
         sku: '',
         brand: '',
@@ -197,6 +200,7 @@ const ProductsTab = ({ products, loading, onAdd, onEdit, onDelete, showModal, ed
         price: parseFloat(formData.price),
         stock: parseInt(formData.stock),
         category_id: parseInt(formData.category_id),
+        images: Array.isArray(formData.images) ? formData.images.filter(img => img.trim()) : [],
         compatible_models: formData.compatible_models.split(',').map(m => m.trim()).filter(m => m)
       }
 
@@ -505,12 +509,52 @@ const ProductModal = ({ formData, setFormData, onSubmit, onClose, editing }) => 
             </select>
           </div>
           <div className="form-group">
-            <label>קישור תמונה</label>
+            <label>קישור תמונה ראשית</label>
             <input 
               type="url" 
               value={formData.image_url} 
               onChange={(e) => setFormData({...formData, image_url: e.target.value})}
+              placeholder="https://example.com/image.jpg"
             />
+          </div>
+          <div className="form-group">
+            <label>תמונות נוספות</label>
+            <div className="images-list">
+              {formData.images && formData.images.map((img, idx) => (
+                <div key={idx} className="image-input-row">
+                  <input 
+                    type="url" 
+                    value={img} 
+                    onChange={(e) => {
+                      const newImages = [...formData.images]
+                      newImages[idx] = e.target.value
+                      setFormData({...formData, images: newImages})
+                    }}
+                    placeholder="https://example.com/image2.jpg"
+                    className="image-url-input"
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      const newImages = formData.images.filter((_, i) => i !== idx)
+                      setFormData({...formData, images: newImages})
+                    }}
+                    className="btn-icon btn-danger"
+                    style={{ marginLeft: '8px' }}
+                  >
+                    <FiTrash2 />
+                  </button>
+                </div>
+              ))}
+              <button 
+                type="button"
+                onClick={() => setFormData({...formData, images: [...(formData.images || []), '']})}
+                className="btn btn-outline"
+                style={{ marginTop: '8px' }}
+              >
+                <FiPlus /> הוסף תמונה נוספת
+              </button>
+            </div>
           </div>
           <div className="form-group">
             <label>מודלים תואמים (מופרדים בפסיק)</label>

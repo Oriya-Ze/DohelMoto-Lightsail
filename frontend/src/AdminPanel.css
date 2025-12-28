@@ -181,6 +181,32 @@
   gap: 16px;
 }
 
+.images-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.image-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.image-url-input {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.3s;
+}
+
+.image-url-input:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
 .form-actions {
   display: flex;
   gap: 12px;
