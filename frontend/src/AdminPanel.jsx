@@ -301,16 +301,27 @@ const CategoriesTab = ({ categories, loading, onAdd, onEdit, onDelete, showModal
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
+      const data = {
+        name: formData.name,
+        name_he: formData.name_he,
+        description: formData.description || '',
+        image_url: formData.image_url || ''
+      }
+      
       if (editingCategory) {
-        await axios.put(`${API_URL}/admin/categories/${editingCategory.id}`, formData, getAuthHeaders())
+        const response = await axios.put(`${API_URL}/admin/categories/${editingCategory.id}`, data, getAuthHeaders())
+        console.log('Category updated:', response.data)
         alert('הקטגוריה עודכנה בהצלחה')
       } else {
-        await axios.post(`${API_URL}/admin/categories`, formData, getAuthHeaders())
+        const response = await axios.post(`${API_URL}/admin/categories`, data, getAuthHeaders())
+        console.log('Category created:', response.data)
         alert('הקטגוריה נוצרה בהצלחה')
       }
       onClose()
     } catch (error) {
-      alert('שגיאה בשמירת הקטגוריה')
+      console.error('Error saving category:', error)
+      console.error('Error response:', error.response?.data)
+      alert(`שגיאה בשמירת הקטגוריה: ${error.response?.data?.error || error.message}`)
     }
   }
 

@@ -741,14 +741,16 @@ app.put('/api/admin/orders/:id/status', authenticateToken, requireAdmin, async (
 app.post('/api/admin/categories', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { name, name_he, description, image_url } = req.body;
+    console.log('Creating category:', { name, name_he, description, image_url });
     const result = await pool.query(
       'INSERT INTO categories (name, name_he, description, image_url) VALUES ($1, $2, $3, $4) RETURNING *',
-      [name, name_he, description, image_url]
+      [name, name_he, description || null, image_url || null]
     );
+    console.log('Category created successfully:', result.rows[0]);
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Error creating category:', error);
-    res.status(500).json({ error: 'Failed to create category' });
+    res.status(500).json({ error: 'Failed to create category', details: error.message });
   }
 });
 
@@ -756,17 +758,19 @@ app.put('/api/admin/categories/:id', authenticateToken, requireAdmin, async (req
   try {
     const { id } = req.params;
     const { name, name_he, description, image_url } = req.body;
+    console.log('Updating category:', { id, name, name_he, description, image_url });
     const result = await pool.query(
       'UPDATE categories SET name = $1, name_he = $2, description = $3, image_url = $4 WHERE id = $5 RETURNING *',
-      [name, name_he, description, image_url, id]
+      [name, name_he, description || null, image_url || null, id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Category not found' });
     }
+    console.log('Category updated successfully:', result.rows[0]);
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error updating category:', error);
-    res.status(500).json({ error: 'Failed to update category' });
+    res.status(500).json({ error: 'Failed to update category', details: error.message });
   }
 });
 

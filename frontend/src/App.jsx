@@ -91,7 +91,7 @@ const Home = () => {
                 to={`/products?category=${cat.id}`} 
                 className="card category-card"
                 style={{ 
-                  backgroundImage: `url(${categoryImages[cat.name_he] || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop'})`,
+                  backgroundImage: `url(${cat.image_url || categoryImages[cat.name_he] || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop'})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center'
                 }}
@@ -145,18 +145,18 @@ const Categories = () => {
     <div className="section">
       <div className="container">
         <h2 className="section-title">כל הקטגוריות</h2>
-        <div className="grid grid-3">
-          {categories.map(cat => (
-            <Link 
-              key={cat.id} 
-              to={`/products?category=${cat.id}`} 
-              className="card category-card"
-              style={{ 
-                backgroundImage: `url(${categoryImages[cat.name_he] || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop'})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}
-            >
+          <div className="grid grid-3">
+            {categories.map(cat => (
+              <Link 
+                key={cat.id} 
+                to={`/products?category=${cat.id}`} 
+                className="card category-card"
+                style={{ 
+                  backgroundImage: `url(${cat.image_url || categoryImages[cat.name_he] || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop'})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}
+              >
               <div className="category-overlay">
                 <h3>{cat.name_he}</h3>
                 <p>{cat.description}</p>
