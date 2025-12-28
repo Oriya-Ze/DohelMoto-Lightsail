@@ -305,16 +305,18 @@ const CategoriesTab = ({ categories, loading, onAdd, onEdit, onDelete, showModal
         name: formData.name,
         name_he: formData.name_he,
         description: formData.description || '',
-        image_url: formData.image_url || ''
+        image_url: formData.image_url || null
       }
+      
+      console.log('Submitting category data:', data)
       
       if (editingCategory) {
         const response = await axios.put(`${API_URL}/admin/categories/${editingCategory.id}`, data, getAuthHeaders())
-        console.log('Category updated:', response.data)
+        console.log('Category updated response:', response.data)
         alert('הקטגוריה עודכנה בהצלחה')
       } else {
         const response = await axios.post(`${API_URL}/admin/categories`, data, getAuthHeaders())
-        console.log('Category created:', response.data)
+        console.log('Category created response:', response.data)
         alert('הקטגוריה נוצרה בהצלחה')
       }
       onClose()

@@ -269,6 +269,7 @@ app.get('/api/health', (req, res) => {
 app.get('/api/categories', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM categories ORDER BY name_he');
+    console.log('Categories fetched:', result.rows.map(c => ({ id: c.id, name_he: c.name_he, image_url: c.image_url })));
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching categories:', error);
