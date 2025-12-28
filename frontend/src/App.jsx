@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 import './App.css'
-import { FiShoppingCart, FiUser, FiSearch, FiMenu, FiX, FiSettings } from 'react-icons/fi'
+import { FiShoppingCart, FiUser, FiSearch, FiMenu, FiX, FiSettings, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import AdminPanel from './AdminPanel'
 import PaymentCallback from './PaymentCallback'
 
@@ -473,6 +473,8 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
+  const [touchStart, setTouchStart] = useState(null)
+  const [touchEnd, setTouchEnd] = useState(null)
   const navigate = useNavigate()
   const user = JSON.parse(localStorage.getItem('user') || 'null')
 
@@ -488,6 +490,53 @@ const ProductDetail = () => {
     product.image_url,
     ...(product.images || [])
   ].filter(Boolean) : []
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (productImages.length <= 1) return
+    const handleKeyPress = (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        setSelectedImage((prev) => (prev + 1) % productImages.length)
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        setSelectedImage((prev) => (prev - 1 + productImages.length) % productImages.length)
+      }
+    }
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [productImages.length])
+
+  const nextImage = () => {
+    setSelectedImage((prev) => (prev + 1) % productImages.length)
+  }
+
+  const prevImage = () => {
+    setSelectedImage((prev) => (prev - 1 + productImages.length) % productImages.length)
+  }
+
+  // Touch handlers for swipe
+  const minSwipeDistance = 50
+
+  const onTouchStart = (e) => {
+    setTouchEnd(null)
+    setTouchStart(e.targetTouches[0].clientX)
+  }
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX)
+  }
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return
+    const distance = touchStart - touchEnd
+    const isLeftSwipe = distance > minSwipeDistance
+    const isRightSwipe = distance < -minSwipeDistance
+    if (isLeftSwipe && productImages.length > 1) {
+      nextImage()
+    }
+    if (isRightSwipe && productImages.length > 1) {
+      prevImage()
+    }
+  }
 
   const addToCart = () => {
     if (!user) {
@@ -513,25 +562,48 @@ const ProductDetail = () => {
           <div className="product-detail-image">
             {productImages.length > 0 ? (
               <>
-                <img src={productImages[selectedImage]} alt={product.name_he} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '8px' }} />
+                <div 
+                  className="image-gallery-container"
+                  onTouchStart={onTouchStart}
+                  onTouchMove={onTouchMove}
+                  onTouchEnd={onTouchEnd}
+                >
+                  {productImages.length > 1 && (
+                    <>
+                      <button 
+                        className="image-nav-btn image-nav-prev"
+                        onClick={prevImage}
+                        aria-label="תמונה קודמת"
+                      >
+                        <FiChevronRight />
+                      </button>
+                      <button 
+                        className="image-nav-btn image-nav-next"
+                        onClick={nextImage}
+                        aria-label="תמונה הבאה"
+                      >
+                        <FiChevronLeft />
+                      </button>
+                      <div className="image-counter">
+                        {selectedImage + 1} / {productImages.length}
+                      </div>
+                    </>
+                  )}
+                  <img 
+                    src={productImages[selectedImage]} 
+                    alt={`${product.name_he} - תמונה ${selectedImage + 1}`} 
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '8px' }} 
+                  />
+                </div>
                 {productImages.length > 1 && (
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '16px', flexWrap: 'wrap' }}>
+                  <div className="image-thumbnails">
                     {productImages.map((img, idx) => (
                       <img
                         key={idx}
                         src={img}
                         alt={`${product.name_he} ${idx + 1}`}
                         onClick={() => setSelectedImage(idx)}
-                        style={{
-                          width: '80px',
-                          height: '80px',
-                          objectFit: 'contain',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          border: selectedImage === idx ? '3px solid #ea580c' : '1px solid #e5e7eb',
-                          opacity: selectedImage === idx ? 1 : 0.7,
-                          backgroundColor: '#f3f4f6'
-                        }}
+                        className={selectedImage === idx ? 'thumbnail active' : 'thumbnail'}
                       />
                     ))}
                   </div>
