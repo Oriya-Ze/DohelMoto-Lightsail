@@ -512,6 +512,9 @@ main {
   justify-content: center;
   border-radius: 12px;
   transition: transform 0.3s, box-shadow 0.3s;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
 }
 
 .category-card::before {

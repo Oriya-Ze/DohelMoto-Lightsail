@@ -100,7 +100,6 @@ const Home = () => {
                 to={`/products?category=${cat.id}`} 
                 className="card category-card"
                 style={{ 
-                  '--category-bg-image': imageUrl ? `url("${imageUrl}")` : 'none',
                   backgroundImage: imageUrl ? `url("${imageUrl}")` : 'none',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
@@ -181,10 +180,8 @@ const Categories = () => {
                   backgroundImage: imageUrl ? `url("${imageUrl}")` : 'none',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat'
-                }}
-                onError={(e) => {
-                  console.error(`Failed to load image for category ${cat.name_he}:`, imageUrl)
+                  backgroundRepeat: 'no-repeat',
+                  backgroundColor: imageUrl ? 'transparent' : '#4b5563'
                 }}
               >
               <div className="category-overlay">
