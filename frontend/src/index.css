@@ -120,6 +120,17 @@ body::before {
   visibility: visible !important;
 }
 
+@media (max-width: 768px) {
+  .card {
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  .container {
+    padding: 0 12px;
+  }
+}
+
 .card:hover {
   transform: translateY(-4px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), 0 0 8px rgba(220, 38, 38, 0.15);
@@ -208,13 +219,7 @@ body::before {
 /* Responsive */
 @media (max-width: 768px) {
   .container {
-    padding: 0 16px;
-  }
-  
-  .grid-2,
-  .grid-3,
-  .grid-4 {
-    grid-template-columns: 1fr;
+    padding: 0 12px;
   }
 }
 
