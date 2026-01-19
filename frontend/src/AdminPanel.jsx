@@ -25,6 +25,16 @@ const AdminPanel = ({ user, onLogout }) => {
     loadData()
   }, [activeTab])
 
+  useEffect(() => {
+    // Hide background when admin panel is mounted
+    document.body.classList.add('admin-panel-active')
+    
+    return () => {
+      // Restore background when admin panel is unmounted
+      document.body.classList.remove('admin-panel-active')
+    }
+  }, [])
+
   const loadData = async () => {
     setLoading(true)
     try {
