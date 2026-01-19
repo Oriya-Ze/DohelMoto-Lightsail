@@ -505,6 +505,8 @@ const ProductCard = ({ product }) => {
 const ProductDetail = () => {
   const { id } = useParams()
   const [product, setProduct] = useState(null)
+  const [variants, setVariants] = useState([])
+  const [selectedVariant, setSelectedVariant] = useState(null)
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
   const [touchStart, setTouchStart] = useState(null)
@@ -518,12 +520,30 @@ const ProductDetail = () => {
       setSelectedImage(0)
       setLoading(false)
     })
+    
+    // Load variants
+    axios.get(`${API_URL}/products/${id}/variants`).then(res => {
+      setVariants(res.data || [])
+    }).catch(() => {
+      // If variants endpoint doesn't exist, set empty array
+      setVariants([])
+    })
   }, [id])
 
-  const productImages = product ? [
-    product.image_url,
-    ...(Array.isArray(product.images) ? product.images : [])
+  // Get current product/variant data
+  const currentProduct = selectedVariant || product
+  
+  const productImages = currentProduct ? [
+    currentProduct.image_url || product?.image_url,
+    ...(Array.isArray(currentProduct.images || product?.images) ? (currentProduct.images || product?.images) : [])
   ].filter(Boolean) : []
+  
+  // Update image when variant changes
+  useEffect(() => {
+    if (selectedVariant && selectedVariant.image_url) {
+      setSelectedImage(0)
+    }
+  }, [selectedVariant])
 
   // Debug: log images
   useEffect(() => {
@@ -585,13 +605,35 @@ const ProductDetail = () => {
       navigate('/login')
       return
     }
+    
+    const productToAdd = selectedVariant || product
+    const isOutOfStock = (productToAdd.stock || 0) === 0
+    
+    if (isOutOfStock) {
+      alert('המוצר לא במלאי')
+      return
+    }
+    
     axios.post(`${API_URL}/cart`, {
       user_id: user.id,
       product_id: product.id,
+      variant_id: selectedVariant ? selectedVariant.id : null,
       quantity: 1
     }).then(() => {
       alert('המוצר נוסף לעגלה!')
+    }).catch(error => {
+      console.error('Error adding to cart:', error)
+      alert('שגיאה בהוספת המוצר לעגלה')
     })
+  }
+  
+  const handleVariantChange = (variantId) => {
+    if (variantId === '') {
+      setSelectedVariant(null)
+      return
+    }
+    const variant = variants.find(v => v.id === parseInt(variantId))
+    setSelectedVariant(variant || null)
   }
 
   if (loading) return <div className="loading">טוען...</div>
@@ -661,24 +703,64 @@ const ProductDetail = () => {
             )}
           </div>
           <div className="product-detail-info">
-            <h1>{product.name_he}</h1>
-            <p className="product-sku">מק"ט: {product.sku}</p>
-            {product.sale_price && parseFloat(product.sale_price) < parseFloat(product.price) ? (
+            <h1>{currentProduct?.name_he || product.name_he}</h1>
+            <p className="product-sku">מק"ט: {currentProduct?.sku || product.sku}</p>
+            
+            {/* Variant Selection Dropdown */}
+            {variants.length > 0 && (
+              <div style={{ marginBottom: '20px' }}>
+                <label htmlFor="variant-select" style={{ 
+                  display: 'block', 
+                  marginBottom: '8px', 
+                  fontWeight: '600',
+                  fontSize: '16px',
+                  color: '#374151'
+                }}>
+                  בחר דגם:
+                </label>
+                <select
+                  id="variant-select"
+                  value={selectedVariant ? selectedVariant.id : ''}
+                  onChange={(e) => handleVariantChange(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    fontSize: '16px',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '6px',
+                    backgroundColor: 'white',
+                    cursor: 'pointer',
+                    transition: 'border-color 0.3s'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#ea580c'}
+                  onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                >
+                  <option value="">דגם בסיסי</option>
+                  {variants.map(variant => (
+                    <option key={variant.id} value={variant.id}>
+                      {variant.name_he} {variant.price ? `- ₪${parseFloat(variant.price).toFixed(2)}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
+            {currentProduct?.sale_price && parseFloat(currentProduct.sale_price) < parseFloat(currentProduct.price || currentProduct.sale_price) ? (
               <div className="product-price-container">
-                <p className="product-price large original-price">₪{parseFloat(product.price || 0).toFixed(2)}</p>
-                <p className="product-price large sale-price">₪{parseFloat(product.sale_price || 0).toFixed(2)}</p>
+                <p className="product-price large original-price">₪{parseFloat(currentProduct.price || 0).toFixed(2)}</p>
+                <p className="product-price large sale-price">₪{parseFloat(currentProduct.sale_price || 0).toFixed(2)}</p>
               </div>
             ) : (
-              <p className="product-price large">₪{parseFloat(product.price || 0).toFixed(2)}</p>
+              <p className="product-price large">₪{parseFloat(currentProduct?.price || product.price || 0).toFixed(2)}</p>
             )}
-            {product.stock !== undefined && (
+            {currentProduct?.stock !== undefined && (
               <p style={{ 
                 fontSize: '16px', 
-                color: product.stock > 0 ? '#10b981' : '#991b1b',
+                color: (currentProduct.stock || 0) > 0 ? '#10b981' : '#991b1b',
                 marginBottom: '16px',
                 fontWeight: '600'
               }}>
-                {product.stock > 0 ? `✓ במלאי (${product.stock} יחידות)` : '✗ אין במלאי'}
+                {(currentProduct.stock || 0) > 0 ? `✓ במלאי (${currentProduct.stock} יחידות)` : '✗ אין במלאי'}
               </p>
             )}
             <div className="product-description">
@@ -700,9 +782,9 @@ const ProductDetail = () => {
                 onClick={addToCart} 
                 className="btn btn-primary" 
                 style={{ fontSize: '18px', padding: '16px 32px' }}
-                disabled={product.stock === 0}
+                disabled={(currentProduct?.stock || product.stock || 0) === 0}
               >
-                {product.stock === 0 ? 'אין במלאי' : 'הוסף לעגלה'}
+                {(currentProduct?.stock || product.stock || 0) === 0 ? 'אין במלאי' : 'הוסף לעגלה'}
               </button>
             </div>
           </div>
@@ -1156,54 +1238,198 @@ const Login = () => {
 }
 
 const About = () => {
+  const [content, setContent] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    axios.get(`${API_URL}/about`)
+      .then(res => {
+        setContent(res.data)
+        setLoading(false)
+      })
+      .catch(() => {
+        setLoading(false)
+      })
+  }, [])
+
+  if (loading) {
+    return <div className="loading">טוען...</div>
+  }
+
+  if (!content) {
+    // Fallback to default content if no content in database
+    return (
+      <div className="section">
+        <div className="container">
+          <div className="card" style={{ maxWidth: '900px', margin: '0 auto' }}>
+            <h1 className="section-title" style={{ marginBottom: '40px', color: '#1f2937' }}>אודות DohelMoto</h1>
+            <p>תוכן עמוד אודות יופיע כאן לאחר עדכון בפאנל הניהול.</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const whyChooseUsItems = Array.isArray(content.why_choose_us_items) 
+    ? content.why_choose_us_items 
+    : (typeof content.why_choose_us_items === 'string' 
+        ? JSON.parse(content.why_choose_us_items || '[]') 
+        : [])
+
   return (
     <div className="section">
       <div className="container">
         <div className="card" style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <h1 className="section-title" style={{ marginBottom: '40px', color: '#1f2937' }}>אודות DohelMoto</h1>
+          <h1 className="section-title" style={{ marginBottom: '40px', color: '#1f2937' }}>
+            {content.title || 'אודות DohelMoto'}
+          </h1>
           
           <div style={{ lineHeight: '1.8', fontSize: '18px' }}>
-            <h2 style={{ color: '#991b1b', marginTop: '32px', marginBottom: '16px' }}>מי אנחנו?</h2>
+            <h2 style={{ color: '#991b1b', marginTop: '32px', marginBottom: '16px' }}>
+              {content.who_we_are_title || 'מי אנחנו?'}
+            </h2>
             <p style={{ marginBottom: '24px' }}>
-              DohelMoto היא החברה המובילה בישראל למכירת חלקי חילוף איכותיים לטרקטורונים, כלי שטח ורכבי שטח.
-              אנו מתמחים במתן פתרונות מקצועיים לכל בעלי כלי השטח, מנוסים ומתחילים כאחד.
+              {content.who_we_are_text || ''}
             </p>
 
-            <h2 style={{ color: '#991b1b', marginTop: '32px', marginBottom: '16px' }}>החזון שלנו</h2>
+            <h2 style={{ color: '#991b1b', marginTop: '32px', marginBottom: '16px' }}>
+              {content.vision_title || 'החזון שלנו'}
+            </h2>
             <p style={{ marginBottom: '24px' }}>
-              להיות המקום הראשון והאמין ביותר לרכישת חלקי חילוף לכלי שטח בישראל.
-              אנו מחויבים לספק מוצרים איכותיים, שירות מקצועי ומחירים הוגנים לכל הלקוחות שלנו.
+              {content.vision_text || ''}
             </p>
 
-            <h2 style={{ color: '#991b1b', marginTop: '32px', marginBottom: '16px' }}>מה אנחנו מציעים?</h2>
+            <h2 style={{ color: '#991b1b', marginTop: '32px', marginBottom: '16px' }}>
+              {content.what_we_offer_title || 'מה אנחנו מציעים?'}
+            </h2>
             <ul style={{ marginBottom: '24px', paddingRight: '24px' }}>
-              <li style={{ marginBottom: '12px' }}>מגוון רחב של חלקי חילוף לכל המותגים המובילים</li>
-              <li style={{ marginBottom: '12px' }}>צמיגים וג'אנטים לכל סוגי כלי השטח</li>
-              <li style={{ marginBottom: '12px' }}>חלקי פלסטיק ופגושים עמידים</li>
-              <li style={{ marginBottom: '12px' }}>אביזרים וציוד נלווה מקצועי</li>
-              <li style={{ marginBottom: '12px' }}>שירות לקוחות מקצועי ואדיב</li>
-              <li style={{ marginBottom: '12px' }}>משלוחים מהירים ברחבי הארץ</li>
+              {(content.what_we_offer_items || []).map((item, index) => (
+                <li key={index} style={{ marginBottom: '12px' }}>{item}</li>
+              ))}
             </ul>
 
-            <h2 style={{ color: '#991b1b', marginTop: '32px', marginBottom: '16px' }}>למה לבחור בנו?</h2>
+            <h2 style={{ color: '#991b1b', marginTop: '32px', marginBottom: '16px' }}>
+              {content.why_choose_us_title || 'למה לבחור בנו?'}
+            </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginTop: '24px' }}>
-              <div className="card" style={{ textAlign: 'center', padding: '20px' }}>
-                <h3 style={{ color: '#991b1b', marginBottom: '12px' }}>איכות מוכחת</h3>
-                <p>כל המוצרים שלנו עוברים בדיקות איכות קפדניות</p>
-              </div>
-              <div className="card" style={{ textAlign: 'center', padding: '20px' }}>
-                <h3 style={{ color: '#991b1b', marginBottom: '12px' }}>מחירים תחרותיים</h3>
-                <p>המחירים הטובים ביותר בשוק עם אחריות מלאה</p>
-              </div>
-              <div className="card" style={{ textAlign: 'center', padding: '20px' }}>
-                <h3 style={{ color: '#991b1b', marginBottom: '12px' }}>שירות מהיר</h3>
-                <p>משלוחים מהירים ושירות לקוחות 24/7</p>
-              </div>
-              <div className="card" style={{ textAlign: 'center', padding: '20px' }}>
-                <h3 style={{ color: '#991b1b', marginBottom: '12px' }}>מומחיות</h3>
-                <p>צוות מקצועי עם ניסיון של שנים בתחום</p>
-              </div>
+              {whyChooseUsItems.map((item, index) => (
+                <div key={index} className="card" style={{ textAlign: 'center', padding: '20px' }}>
+                  <h3 style={{ color: '#991b1b', marginBottom: '12px' }}>{item.title || ''}</h3>
+                  <p>{item.text || ''}</p>
+                </div>
+              ))}
             </div>
+
+            {/* Social Media Links */}
+            {(content.whatsapp_url || content.instagram_url || content.tiktok_url) && (
+              <div style={{ marginTop: '48px', paddingTop: '32px', borderTop: '2px solid #e5e7eb', textAlign: 'center' }}>
+                <h3 style={{ color: '#991b1b', marginBottom: '24px' }}>עקבו אחרינו</h3>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
+                  {content.whatsapp_url && (
+                    <a
+                      href={content.whatsapp_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '12px 24px',
+                        backgroundColor: '#25D366',
+                        color: 'white',
+                        textDecoration: 'none',
+                        borderRadius: '8px',
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        transition: 'all 0.3s',
+                        boxShadow: '0 2px 8px rgba(37, 211, 102, 0.3)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.transform = 'translateY(-2px)'
+                        e.target.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.4)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = 'translateY(0)'
+                        e.target.style.boxShadow = '0 2px 8px rgba(37, 211, 102, 0.3)'
+                      }}
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                      </svg>
+                      וואטסאפ
+                    </a>
+                  )}
+                  {content.instagram_url && (
+                    <a
+                      href={content.instagram_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '12px 24px',
+                        background: 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)',
+                        color: 'white',
+                        textDecoration: 'none',
+                        borderRadius: '8px',
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        transition: 'all 0.3s',
+                        boxShadow: '0 2px 8px rgba(188, 24, 136, 0.3)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.transform = 'translateY(-2px)'
+                        e.target.style.boxShadow = '0 4px 12px rgba(188, 24, 136, 0.4)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = 'translateY(0)'
+                        e.target.style.boxShadow = '0 2px 8px rgba(188, 24, 136, 0.3)'
+                      }}
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                      </svg>
+                      אינסטגרם
+                    </a>
+                  )}
+                  {content.tiktok_url && (
+                    <a
+                      href={content.tiktok_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '12px 24px',
+                        backgroundColor: '#000000',
+                        color: 'white',
+                        textDecoration: 'none',
+                        borderRadius: '8px',
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        transition: 'all 0.3s',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.transform = 'translateY(-2px)'
+                        e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.4)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = 'translateY(0)'
+                        e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)'
+                      }}
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+                      </svg>
+                      טיקטוק
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

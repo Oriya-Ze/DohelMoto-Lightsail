@@ -258,6 +258,86 @@ const initDatabase = async () => {
       END $$;
     `);
 
+    // About page content table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS about_page (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) DEFAULT 'אודות DohelMoto',
+        who_we_are_title VARCHAR(255) DEFAULT 'מי אנחנו?',
+        who_we_are_text TEXT,
+        vision_title VARCHAR(255) DEFAULT 'החזון שלנו',
+        vision_text TEXT,
+        what_we_offer_title VARCHAR(255) DEFAULT 'מה אנחנו מציעים?',
+        what_we_offer_items TEXT[],
+        why_choose_us_title VARCHAR(255) DEFAULT 'למה לבחור בנו?',
+        why_choose_us_items JSONB,
+        whatsapp_url VARCHAR(500),
+        instagram_url VARCHAR(500),
+        tiktok_url VARCHAR(500),
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Add social media columns if they don't exist (migration)
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='about_page' AND column_name='whatsapp_url'
+        ) THEN
+          ALTER TABLE about_page ADD COLUMN whatsapp_url VARCHAR(500);
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='about_page' AND column_name='instagram_url'
+        ) THEN
+          ALTER TABLE about_page ADD COLUMN instagram_url VARCHAR(500);
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='about_page' AND column_name='tiktok_url'
+        ) THEN
+          ALTER TABLE about_page ADD COLUMN tiktok_url VARCHAR(500);
+        END IF;
+      END $$;
+    `);
+
+    // Initialize default about page content if table is empty
+    const aboutCheck = await pool.query('SELECT COUNT(*) FROM about_page');
+    if (parseInt(aboutCheck.rows[0].count) === 0) {
+      await pool.query(`
+        INSERT INTO about_page (
+          title, who_we_are_title, who_we_are_text, vision_title, vision_text,
+          what_we_offer_title, what_we_offer_items, why_choose_us_title, why_choose_us_items,
+          whatsapp_url, instagram_url, tiktok_url
+        ) VALUES (
+          'אודות DohelMoto',
+          'מי אנחנו?',
+          'DohelMoto היא החברה המובילה בישראל למכירת חלקי חילוף איכותיים לטרקטורונים, כלי שטח ורכבי שטח. אנו מתמחים במתן פתרונות מקצועיים לכל בעלי כלי השטח, מנוסים ומתחילים כאחד.',
+          'החזון שלנו',
+          'להיות המקום הראשון והאמין ביותר לרכישת חלקי חילוף לכלי שטח בישראל. אנו מחויבים לספק מוצרים איכותיים, שירות מקצועי ומחירים הוגנים לכל הלקוחות שלנו.',
+          'מה אנחנו מציעים?',
+          ARRAY[
+            'מגוון רחב של חלקי חילוף לכל המותגים המובילים',
+            'צמיגים וג''אנטים לכל סוגי כלי השטח',
+            'חלקי פלסטיק ופגושים עמידים',
+            'אביזרים וציוד נלווה מקצועי',
+            'שירות לקוחות מקצועי ואדיב',
+            'משלוחים מהירים ברחבי הארץ'
+          ],
+          'למה לבחור בנו?',
+          '[
+            {"title": "איכות מוכחת", "text": "כל המוצרים שלנו עוברים בדיקות איכות קפדניות"},
+            {"title": "מחירים תחרותיים", "text": "המחירים הטובים ביותר בשוק עם אחריות מלאה"},
+            {"title": "שירות מהיר", "text": "משלוחים מהירים ושירות לקוחות 24/7"},
+            {"title": "מומחיות", "text": "צוות מקצועי עם ניסיון של שנים בתחום"}
+          ]'::jsonb,
+          NULL, NULL, NULL
+        )
+      `);
+    }
+
     console.log('Database tables initialized successfully');
   } catch (error) {
     console.error('Error initializing database:', error);
@@ -390,6 +470,34 @@ app.get('/api/products/:id', async (req, res) => {
   } catch (error) {
     console.error('Error fetching product:', error);
     res.status(500).json({ error: 'Failed to fetch product' });
+  }
+});
+
+// Get product variants (public endpoint)
+app.get('/api/products/:id/variants', async (req, res) => {
+  try {
+    const { id } = req.params;
+    // Check if product_variants table exists
+    const tableCheck = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'product_variants'
+      )
+    `);
+    
+    if (!tableCheck.rows[0].exists) {
+      return res.json([]);
+    }
+    
+    const result = await pool.query(
+      'SELECT * FROM product_variants WHERE product_id = $1 ORDER BY id',
+      [id]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching product variants:', error);
+    // Return empty array if table doesn't exist or error occurs
+    res.json([]);
   }
 });
 
@@ -797,6 +905,102 @@ app.delete('/api/admin/categories/:id', authenticateToken, requireAdmin, async (
   } catch (error) {
     console.error('Error deleting category:', error);
     res.status(500).json({ error: 'Failed to delete category' });
+  }
+});
+
+// About Page Content - Public endpoint
+app.get('/api/about', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM about_page ORDER BY id DESC LIMIT 1');
+    if (result.rows.length === 0) {
+      return res.json(null);
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error fetching about page content:', error);
+    res.status(500).json({ error: 'Failed to fetch about page content' });
+  }
+});
+
+// Admin Routes - About Page Management
+app.get('/api/admin/about', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM about_page ORDER BY id DESC LIMIT 1');
+    if (result.rows.length === 0) {
+      return res.json(null);
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error fetching about page content:', error);
+    res.status(500).json({ error: 'Failed to fetch about page content' });
+  }
+});
+
+app.put('/api/admin/about', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const {
+      title,
+      who_we_are_title,
+      who_we_are_text,
+      vision_title,
+      vision_text,
+      what_we_offer_title,
+      what_we_offer_items,
+      why_choose_us_title,
+      why_choose_us_items,
+      whatsapp_url,
+      instagram_url,
+      tiktok_url
+    } = req.body;
+
+    // Check if record exists
+    const checkResult = await pool.query('SELECT id FROM about_page ORDER BY id DESC LIMIT 1');
+    
+    if (checkResult.rows.length === 0) {
+      // Create new record
+      const result = await pool.query(`
+        INSERT INTO about_page (
+          title, who_we_are_title, who_we_are_text, vision_title, vision_text,
+          what_we_offer_title, what_we_offer_items, why_choose_us_title, why_choose_us_items,
+          whatsapp_url, instagram_url, tiktok_url
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *
+      `, [
+        title, who_we_are_title, who_we_are_text, vision_title, vision_text,
+        what_we_offer_title, what_we_offer_items || [], why_choose_us_title, 
+        JSON.stringify(why_choose_us_items || []),
+        whatsapp_url || null, instagram_url || null, tiktok_url || null
+      ]);
+      res.json(result.rows[0]);
+    } else {
+      // Update existing record
+      const result = await pool.query(`
+        UPDATE about_page SET
+          title = $1,
+          who_we_are_title = $2,
+          who_we_are_text = $3,
+          vision_title = $4,
+          vision_text = $5,
+          what_we_offer_title = $6,
+          what_we_offer_items = $7,
+          why_choose_us_title = $8,
+          why_choose_us_items = $9,
+          whatsapp_url = $10,
+          instagram_url = $11,
+          tiktok_url = $12,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = (SELECT id FROM about_page ORDER BY id DESC LIMIT 1)
+        RETURNING *
+      `, [
+        title, who_we_are_title, who_we_are_text, vision_title, vision_text,
+        what_we_offer_title, what_we_offer_items || [], why_choose_us_title,
+        JSON.stringify(why_choose_us_items || []),
+        whatsapp_url || null, instagram_url || null, tiktok_url || null
+      ]);
+      res.json(result.rows[0]);
+    }
+  } catch (error) {
+    console.error('Error updating about page content:', error);
+    res.status(500).json({ error: 'Failed to update about page content', details: error.message });
   }
 });
 

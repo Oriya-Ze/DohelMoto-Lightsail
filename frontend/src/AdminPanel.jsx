@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
-import { FiPlus, FiEdit, FiTrash2, FiPackage, FiShoppingBag, FiTag } from 'react-icons/fi'
+import { FiPlus, FiEdit, FiTrash2, FiPackage, FiShoppingBag, FiTag, FiInfo } from 'react-icons/fi'
 import './AdminPanel.css'
 
 const API_URL = '/api'
@@ -10,6 +10,7 @@ const AdminPanel = ({ user, onLogout }) => {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [orders, setOrders] = useState([])
+  const [aboutContent, setAboutContent] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showProductModal, setShowProductModal] = useState(false)
   const [showCategoryModal, setShowCategoryModal] = useState(false)
@@ -54,6 +55,9 @@ const AdminPanel = ({ user, onLogout }) => {
       } else if (activeTab === 'orders') {
         const res = await axios.get(`${API_URL}/admin/orders`, getAuthHeaders())
         setOrders(res.data)
+      } else if (activeTab === 'about') {
+        const res = await axios.get(`${API_URL}/admin/about`, getAuthHeaders())
+        setAboutContent(res.data)
       }
     } catch (error) {
       console.error('Error loading data:', error)
@@ -135,6 +139,12 @@ const AdminPanel = ({ user, onLogout }) => {
         >
           <FiShoppingBag /> הזמנות
         </button>
+        <button 
+          className={activeTab === 'about' ? 'active' : ''} 
+          onClick={() => setActiveTab('about')}
+        >
+          <FiInfo /> אודות
+        </button>
       </div>
 
       <div className="admin-content">
@@ -171,6 +181,15 @@ const AdminPanel = ({ user, onLogout }) => {
             orders={orders}
             loading={loading}
             onUpdateStatus={handleUpdateOrderStatus}
+          />
+        )}
+
+        {activeTab === 'about' && (
+          <AboutTab 
+            aboutContent={aboutContent}
+            loading={loading}
+            getAuthHeaders={getAuthHeaders}
+            onUpdate={() => loadData()}
           />
         )}
       </div>
@@ -661,6 +680,306 @@ const OrdersTab = ({ orders, loading, onUpdateStatus }) => {
           </table>
         </div>
       )}
+    </div>
+  )
+}
+
+const AboutTab = ({ aboutContent, loading, getAuthHeaders, onUpdate }) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    who_we_are_title: '',
+    who_we_are_text: '',
+    vision_title: '',
+    vision_text: '',
+    what_we_offer_title: '',
+    what_we_offer_items: [],
+    why_choose_us_title: '',
+    why_choose_us_items: [],
+    whatsapp_url: '',
+    instagram_url: '',
+    tiktok_url: ''
+  })
+  const [newOfferItem, setNewOfferItem] = useState('')
+  const [newWhyChooseItem, setNewWhyChooseItem] = useState({ title: '', text: '' })
+
+  useEffect(() => {
+    if (aboutContent) {
+      setFormData({
+        title: aboutContent.title || '',
+        who_we_are_title: aboutContent.who_we_are_title || '',
+        who_we_are_text: aboutContent.who_we_are_text || '',
+        vision_title: aboutContent.vision_title || '',
+        vision_text: aboutContent.vision_text || '',
+        what_we_offer_title: aboutContent.what_we_offer_title || '',
+        what_we_offer_items: aboutContent.what_we_offer_items || [],
+        why_choose_us_title: aboutContent.why_choose_us_title || '',
+        why_choose_us_items: Array.isArray(aboutContent.why_choose_us_items) 
+          ? aboutContent.why_choose_us_items 
+          : (typeof aboutContent.why_choose_us_items === 'string' 
+              ? JSON.parse(aboutContent.why_choose_us_items || '[]') 
+              : []),
+        whatsapp_url: aboutContent.whatsapp_url || '',
+        instagram_url: aboutContent.instagram_url || '',
+        tiktok_url: aboutContent.tiktok_url || ''
+      })
+    }
+  }, [aboutContent])
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    try {
+      await axios.put(`${API_URL}/admin/about`, formData, getAuthHeaders())
+      alert('תוכן עמוד אודות עודכן בהצלחה')
+      onUpdate()
+    } catch (error) {
+      console.error('Error updating about page:', error)
+      alert('שגיאה בעדכון תוכן עמוד אודות')
+    }
+  }
+
+  const addOfferItem = () => {
+    if (newOfferItem.trim()) {
+      setFormData({
+        ...formData,
+        what_we_offer_items: [...formData.what_we_offer_items, newOfferItem.trim()]
+      })
+      setNewOfferItem('')
+    }
+  }
+
+  const removeOfferItem = (index) => {
+    setFormData({
+      ...formData,
+      what_we_offer_items: formData.what_we_offer_items.filter((_, i) => i !== index)
+    })
+  }
+
+  const addWhyChooseItem = () => {
+    if (newWhyChooseItem.title.trim() && newWhyChooseItem.text.trim()) {
+      setFormData({
+        ...formData,
+        why_choose_us_items: [...formData.why_choose_us_items, { ...newWhyChooseItem }]
+      })
+      setNewWhyChooseItem({ title: '', text: '' })
+    }
+  }
+
+  const removeWhyChooseItem = (index) => {
+    setFormData({
+      ...formData,
+      why_choose_us_items: formData.why_choose_us_items.filter((_, i) => i !== index)
+    })
+  }
+
+  if (loading) {
+    return <div className="loading">טוען תוכן אודות...</div>
+  }
+
+  return (
+    <div>
+      <div className="admin-toolbar">
+        <h2>עריכת עמוד אודות</h2>
+      </div>
+
+      <form onSubmit={handleSubmit} style={{ background: 'white', padding: '24px', borderRadius: '8px' }}>
+        <div className="form-group">
+          <label>כותרת עמוד</label>
+          <input
+            type="text"
+            value={formData.title}
+            onChange={(e) => setFormData({...formData, title: e.target.value})}
+            required
+          />
+        </div>
+
+        <h3 style={{ marginTop: '32px', marginBottom: '16px', color: '#991b1b' }}>מי אנחנו?</h3>
+        <div className="form-group">
+          <label>כותרת</label>
+          <input
+            type="text"
+            value={formData.who_we_are_title}
+            onChange={(e) => setFormData({...formData, who_we_are_title: e.target.value})}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label>תוכן</label>
+          <textarea
+            value={formData.who_we_are_text}
+            onChange={(e) => setFormData({...formData, who_we_are_text: e.target.value})}
+            rows="4"
+            required
+          />
+        </div>
+
+        <h3 style={{ marginTop: '32px', marginBottom: '16px', color: '#991b1b' }}>החזון שלנו</h3>
+        <div className="form-group">
+          <label>כותרת</label>
+          <input
+            type="text"
+            value={formData.vision_title}
+            onChange={(e) => setFormData({...formData, vision_title: e.target.value})}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label>תוכן</label>
+          <textarea
+            value={formData.vision_text}
+            onChange={(e) => setFormData({...formData, vision_text: e.target.value})}
+            rows="4"
+            required
+          />
+        </div>
+
+        <h3 style={{ marginTop: '32px', marginBottom: '16px', color: '#991b1b' }}>מה אנחנו מציעים?</h3>
+        <div className="form-group">
+          <label>כותרת</label>
+          <input
+            type="text"
+            value={formData.what_we_offer_title}
+            onChange={(e) => setFormData({...formData, what_we_offer_title: e.target.value})}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label>פריטים</label>
+          {formData.what_we_offer_items.map((item, index) => (
+            <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+              <input
+                type="text"
+                value={item}
+                onChange={(e) => {
+                  const newItems = [...formData.what_we_offer_items]
+                  newItems[index] = e.target.value
+                  setFormData({...formData, what_we_offer_items: newItems})
+                }}
+                style={{ flex: 1 }}
+              />
+              <button
+                type="button"
+                onClick={() => removeOfferItem(index)}
+                className="btn-icon btn-danger"
+              >
+                <FiTrash2 />
+              </button>
+            </div>
+          ))}
+          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+            <input
+              type="text"
+              value={newOfferItem}
+              onChange={(e) => setNewOfferItem(e.target.value)}
+              placeholder="הוסף פריט חדש"
+              style={{ flex: 1 }}
+            />
+            <button type="button" onClick={addOfferItem} className="btn btn-outline">
+              <FiPlus /> הוסף
+            </button>
+          </div>
+        </div>
+
+        <h3 style={{ marginTop: '32px', marginBottom: '16px', color: '#991b1b' }}>למה לבחור בנו?</h3>
+        <div className="form-group">
+          <label>כותרת</label>
+          <input
+            type="text"
+            value={formData.why_choose_us_title}
+            onChange={(e) => setFormData({...formData, why_choose_us_title: e.target.value})}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label>פריטים</label>
+          {formData.why_choose_us_items.map((item, index) => (
+            <div key={index} style={{ marginBottom: '16px', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '6px' }}>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                <input
+                  type="text"
+                  value={item.title}
+                  onChange={(e) => {
+                    const newItems = [...formData.why_choose_us_items]
+                    newItems[index].title = e.target.value
+                    setFormData({...formData, why_choose_us_items: newItems})
+                  }}
+                  placeholder="כותרת"
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeWhyChooseItem(index)}
+                  className="btn-icon btn-danger"
+                >
+                  <FiTrash2 />
+                </button>
+              </div>
+              <textarea
+                value={item.text}
+                onChange={(e) => {
+                  const newItems = [...formData.why_choose_us_items]
+                  newItems[index].text = e.target.value
+                  setFormData({...formData, why_choose_us_items: newItems})
+                }}
+                placeholder="תוכן"
+                rows="2"
+                style={{ width: '100%' }}
+              />
+            </div>
+          ))}
+          <div style={{ marginTop: '16px', padding: '12px', border: '1px solid #e5e7eb', borderRadius: '6px' }}>
+            <input
+              type="text"
+              value={newWhyChooseItem.title}
+              onChange={(e) => setNewWhyChooseItem({...newWhyChooseItem, title: e.target.value})}
+              placeholder="כותרת פריט חדש"
+              style={{ width: '100%', marginBottom: '8px' }}
+            />
+            <textarea
+              value={newWhyChooseItem.text}
+              onChange={(e) => setNewWhyChooseItem({...newWhyChooseItem, text: e.target.value})}
+              placeholder="תוכן פריט חדש"
+              rows="2"
+              style={{ width: '100%', marginBottom: '8px' }}
+            />
+            <button type="button" onClick={addWhyChooseItem} className="btn btn-outline">
+              <FiPlus /> הוסף פריט
+            </button>
+          </div>
+        </div>
+
+        <h3 style={{ marginTop: '32px', marginBottom: '16px', color: '#991b1b' }}>קישורי רשתות חברתיות</h3>
+        <div className="form-group">
+          <label>קישור וואטסאפ</label>
+          <input
+            type="url"
+            value={formData.whatsapp_url}
+            onChange={(e) => setFormData({...formData, whatsapp_url: e.target.value})}
+            placeholder="https://wa.me/972XXXXXXXXX"
+          />
+        </div>
+        <div className="form-group">
+          <label>קישור אינסטגרם</label>
+          <input
+            type="url"
+            value={formData.instagram_url}
+            onChange={(e) => setFormData({...formData, instagram_url: e.target.value})}
+            placeholder="https://instagram.com/your_account"
+          />
+        </div>
+        <div className="form-group">
+          <label>קישור טיקטוק</label>
+          <input
+            type="url"
+            value={formData.tiktok_url}
+            onChange={(e) => setFormData({...formData, tiktok_url: e.target.value})}
+            placeholder="https://tiktok.com/@your_account"
+          />
+        </div>
+
+        <div className="form-actions">
+          <button type="submit" className="btn btn-primary">שמור שינויים</button>
+        </div>
+      </form>
     </div>
   )
 }
