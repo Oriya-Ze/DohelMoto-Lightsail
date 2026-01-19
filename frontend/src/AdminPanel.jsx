@@ -22,16 +22,23 @@ const AdminPanel = ({ user, onLogout }) => {
   }
 
   useEffect(() => {
+    console.log('AdminPanel mounted')
     loadData()
   }, [activeTab])
 
   useEffect(() => {
     // Hide background when admin panel is mounted
+    console.log('Adding admin-panel-active class to body')
     document.body.classList.add('admin-panel-active')
+    document.body.style.background = '#f5f5f5'
+    document.body.style.backgroundImage = 'none'
     
     return () => {
       // Restore background when admin panel is unmounted
+      console.log('Removing admin-panel-active class from body')
       document.body.classList.remove('admin-panel-active')
+      document.body.style.background = ''
+      document.body.style.backgroundImage = ''
     }
   }, [])
 
@@ -89,7 +96,21 @@ const AdminPanel = ({ user, onLogout }) => {
   }
 
   return (
-    <div className="admin-panel">
+    <div 
+      className="admin-panel"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100%',
+        height: '100%',
+        overflowY: 'auto',
+        zIndex: 99999,
+        background: '#f5f5f5'
+      }}
+    >
       <div className="admin-header">
         <h1>פאנל ניהול - DohelMoto</h1>
         <button onClick={onLogout} className="btn btn-outline">התנתק</button>
