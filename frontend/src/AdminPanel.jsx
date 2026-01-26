@@ -488,43 +488,89 @@ const ProductsTab = ({ products, loading, onAdd, onEdit, onDelete, showModal, ed
 
       {loading ? (
         <div className="loading">טוען מוצרים...</div>
-      ) : (
-        <div className="admin-table-container">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>מק"ט</th>
-                <th>שם</th>
-                <th>מחיר</th>
-                <th>מלאי</th>
-                <th>סטטוס</th>
-                <th>פעולות</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map(product => (
-                <tr key={product.id}>
-                  <td>{product.sku}</td>
-                  <td>{product.name_he}</td>
-                  <td>₪{product.price}</td>
-                  <td>{product.stock}</td>
-                  <td>{product.is_active ? 'פעיל' : 'לא פעיל'}</td>
-                  <td>
-                    <button onClick={() => onEdit(product)} className="btn-icon">
-                      <FiEdit />
-                    </button>
-                    <button onClick={() => onManageVariants(product)} className="btn-icon" style={{ marginRight: '8px' }} title="נהל דגמים">
-                      📦
-                    </button>
-                    <button onClick={() => onDelete(product.id)} className="btn-icon btn-danger">
-                      <FiTrash2 />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      ) : products.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <p>אין מוצרים</p>
         </div>
+      ) : (
+        <>
+          {/* Desktop Table View */}
+          <div className="admin-table-container admin-table-desktop">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>מק"ט</th>
+                  <th>שם</th>
+                  <th>מחיר</th>
+                  <th>מלאי</th>
+                  <th>סטטוס</th>
+                  <th>פעולות</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map(product => (
+                  <tr key={product.id}>
+                    <td>{product.sku}</td>
+                    <td>{product.name_he}</td>
+                    <td>₪{product.price}</td>
+                    <td>{product.stock}</td>
+                    <td>{product.is_active ? 'פעיל' : 'לא פעיל'}</td>
+                    <td>
+                      <button onClick={() => onEdit(product)} className="btn-icon">
+                        <FiEdit />
+                      </button>
+                      <button onClick={() => onManageVariants(product)} className="btn-icon" style={{ marginRight: '8px' }} title="נהל דגמים">
+                        📦
+                      </button>
+                      <button onClick={() => onDelete(product.id)} className="btn-icon btn-danger">
+                        <FiTrash2 />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="admin-products-cards admin-products-mobile">
+            {products.map(product => (
+              <div key={product.id} className="admin-product-card">
+                <div className="product-card-header">
+                  <h3>{product.name_he}</h3>
+                  <span className={`status-badge ${product.is_active ? 'active' : 'inactive'}`}>
+                    {product.is_active ? 'פעיל' : 'לא פעיל'}
+                  </span>
+                </div>
+                <div className="product-card-body">
+                  <div className="product-info-row">
+                    <span className="label">מק"ט:</span>
+                    <span className="value">{product.sku}</span>
+                  </div>
+                  <div className="product-info-row">
+                    <span className="label">מחיר:</span>
+                    <span className="value">₪{product.price}</span>
+                  </div>
+                  <div className="product-info-row">
+                    <span className="label">מלאי:</span>
+                    <span className="value">{product.stock}</span>
+                  </div>
+                </div>
+                <div className="product-card-actions">
+                  <button onClick={() => onEdit(product)} className="btn-icon" title="ערוך">
+                    <FiEdit />
+                  </button>
+                  <button onClick={() => onManageVariants(product)} className="btn-icon" title="נהל דגמים">
+                    📦
+                  </button>
+                  <button onClick={() => onDelete(product.id)} className="btn-icon btn-danger" title="מחק">
+                    <FiTrash2 />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )
