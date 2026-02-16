@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useParams } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import axios from 'axios'
 import './App.css'
 import { FiShoppingCart, FiUser, FiSearch, FiMenu, FiX, FiSettings, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
@@ -40,6 +40,18 @@ const WhatsAppFloating = () => {
 // Components
 const Header = ({ cartCount, user, onLogout }) => {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const navigate = useNavigate()
+
+  const handleSearch = (e) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`)
+      setSearchQuery('')
+      setMenuOpen(false)
+    }
+  }
+
   return (
     <header className="header">
       <div className="container">
@@ -47,6 +59,18 @@ const Header = ({ cartCount, user, onLogout }) => {
           <Link to="/" className="logo">
             <img src="/images/logo.png" alt="DohelMoto" className="logo-image" />
           </Link>
+          <form className="header-search" onSubmit={handleSearch}>
+            <input
+              type="text"
+              placeholder="חפש מוצרים..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="header-search-input"
+            />
+            <button type="submit" className="header-search-btn" aria-label="חפש">
+              <FiSearch />
+            </button>
+          </form>
           <nav className={`nav ${menuOpen ? 'nav-open' : ''}`}>
             <Link to="/" onClick={() => setMenuOpen(false)}>בית</Link>
             <Link to="/products" onClick={() => setMenuOpen(false)}>מוצרים</Link>
@@ -226,19 +250,27 @@ const Categories = () => {
 }
 
 const Products = () => {
+  const [searchParams] = useSearchParams()
+  const urlSearch = searchParams.get('search') || ''
+  const urlCategory = searchParams.get('category') || ''
   const [products, setProducts] = useState([])
   const [filteredProducts, setFilteredProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [vehicles, setVehicles] = useState([])
   const [vehicleModels, setVehicleModels] = useState([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('')
+  const [search, setSearch] = useState(urlSearch)
+  const [selectedCategory, setSelectedCategory] = useState(urlCategory)
   const [selectedVehicleBrand, setSelectedVehicleBrand] = useState('')
   const [selectedVehicleModel, setSelectedVehicleModel] = useState('')
   const [sortBy, setSortBy] = useState('newest')
   const [priceRange, setPriceRange] = useState({ min: '', max: '' })
   const user = JSON.parse(localStorage.getItem('user') || 'null')
+
+  useEffect(() => {
+    setSearch(urlSearch)
+    setSelectedCategory(urlCategory)
+  }, [urlSearch, urlCategory])
 
   useEffect(() => {
     axios.get(`${API_URL}/categories`).then(res => setCategories(res.data))
