@@ -137,20 +137,21 @@ const Home = () => {
             {categories.slice(0, 6).map(cat => {
               const rawUrl = (cat.image_url || '').trim()
               const imageUrl = rawUrl || categoryImages[cat.name_he] || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop'
-              const safeUrl = imageUrl ? imageUrl.replace(/"/g, '%22') : ''
               return (
               <Link 
                 key={`${cat.id}-${cat.image_url || 'default'}`}
                 to={`/products?category=${cat.id}`} 
                 className="card category-card"
-                style={{ 
-                  backgroundImage: safeUrl ? `url("${safeUrl}")` : 'none',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundColor: imageUrl ? 'transparent' : '#4b5563'
-                }}
               >
+                <img 
+                  src={imageUrl} 
+                  alt={cat.name_he}
+                  className="category-card-bg"
+                  onError={(e) => {
+                    e.target.onerror = null
+                    e.target.src = categoryImages[cat.name_he] || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop'
+                  }}
+                />
                 <div className="category-overlay">
                   <h3>{cat.name_he}</h3>
                   <p>{cat.description}</p>
@@ -214,25 +215,26 @@ const Categories = () => {
             {categories.map(cat => {
               const rawUrl = (cat.image_url || '').trim()
               const imageUrl = rawUrl || categoryImages[cat.name_he] || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop'
-              const safeUrl = imageUrl ? imageUrl.replace(/"/g, '%22') : ''
               return (
               <Link 
                 key={`${cat.id}-${cat.image_url || 'default'}`}
                 to={`/products?category=${cat.id}`} 
                 className="card category-card"
-                style={{ 
-                  backgroundImage: safeUrl ? `url("${safeUrl}")` : 'none',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundColor: imageUrl ? 'transparent' : '#4b5563'
-                }}
               >
-              <div className="category-overlay">
-                <h3>{cat.name_he}</h3>
-                <p>{cat.description}</p>
-              </div>
-            </Link>
+                <img 
+                  src={imageUrl} 
+                  alt={cat.name_he}
+                  className="category-card-bg"
+                  onError={(e) => {
+                    e.target.onerror = null
+                    e.target.src = categoryImages[cat.name_he] || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop'
+                  }}
+                />
+                <div className="category-overlay">
+                  <h3>{cat.name_he}</h3>
+                  <p>{cat.description}</p>
+                </div>
+              </Link>
             )
           })}
         </div>

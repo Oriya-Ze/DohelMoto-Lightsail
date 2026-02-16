@@ -126,6 +126,19 @@ const initDatabase = async () => {
       )
     `);
 
+    // Migration: add image_url to categories if missing (for existing DBs)
+    await pool.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='categories' AND column_name='image_url'
+        ) THEN
+          ALTER TABLE categories ADD COLUMN image_url VARCHAR(500);
+        END IF;
+      END $$;
+    `);
+
     // Products table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS products (
