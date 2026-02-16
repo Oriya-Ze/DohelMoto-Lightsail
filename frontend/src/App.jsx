@@ -131,14 +131,6 @@ const Home = () => {
 
   return (
     <div>
-      <section className="hero">
-        <div className="container">
-          <h2>ברוכים הבאים ל-DohelMoto</h2>
-          <p>המקום המוביל לחלקי חילוף איכותיים לטרקטורונים וכלי שטח</p>
-          <Link to="/products" className="btn btn-primary">עיין במוצרים</Link>
-        </div>
-      </section>
-
       <section className="section">
         <div className="container">
           <h2 className="section-title">קטגוריות מובילות</h2>
