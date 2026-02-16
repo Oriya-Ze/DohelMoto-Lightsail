@@ -24,7 +24,7 @@ body.admin-panel-active::before {
 body.admin-panel-active {
   background: #f5f5f5 !important;
   background-image: none !important;
-  overflow: hidden !important;
+  /* overflow: hidden removed - causes scroll issues on iOS Safari */
 }
 
 /* Ensure main element doesn't interfere */

@@ -947,11 +947,25 @@ const Cart = () => {
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true)
-  const [formData, setFormData] = useState({ email: '', password: '', name: '', phone: '' })
+  const [formData, setFormData] = useState({ email: '', password: '', name: '', phone: '', vehicle_brand: '', vehicle_model: '' })
   const [errors, setErrors] = useState({})
   const [passwordStrength, setPasswordStrength] = useState({ strength: 0, text: '' })
   const [emailExists, setEmailExists] = useState(false)
+  const [vehicles, setVehicles] = useState([])
+  const [vehicleModels, setVehicleModels] = useState([])
   const navigate = useNavigate()
+
+  useEffect(() => {
+    axios.get(`${API_URL}/vehicles`).then(res => setVehicles(res.data)).catch(() => setVehicles([]))
+  }, [])
+
+  useEffect(() => {
+    if (formData.vehicle_brand) {
+      axios.get(`${API_URL}/vehicles/models?brand=${formData.vehicle_brand}`).then(res => setVehicleModels(res.data)).catch(() => setVehicleModels([]))
+    } else {
+      setVehicleModels([])
+    }
+  }, [formData.vehicle_brand])
 
   useEffect(() => {
     // Ensure the login form is visible
@@ -1062,7 +1076,7 @@ const Login = () => {
       axios.post(`${API_URL}/register`, formData).then(() => {
         alert('נרשמת בהצלחה! התחבר עכשיו')
         setIsLogin(true)
-        setFormData({ email: '', password: '', name: '', phone: '' })
+        setFormData({ email: '', password: '', name: '', phone: '', vehicle_brand: '', vehicle_model: '' })
         setErrors({})
         setPasswordStrength({ strength: 0, text: '' })
       }).catch((err) => {
@@ -1619,16 +1633,19 @@ const Orders = () => {
 
 // Main App Component
 function App() {
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem('user')
+      return stored ? JSON.parse(stored) : null
+    } catch { return null }
+  })
   const [cartCount, setCartCount] = useState(0)
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user')
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
-      loadCartCount(JSON.parse(storedUser).id)
+    if (user) {
+      loadCartCount(user.id)
     }
-  }, [])
+  }, [user])
 
   const loadCartCount = (userId) => {
     axios.get(`${API_URL}/cart/${userId}`).then(res => {

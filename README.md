@@ -1,188 +1,243 @@
 # DohelMoto - חנות חלקי חילוף לטרקטורונים וכלי שטח
 
-חנות מקוונת מקצועית למכירת חלקי חילוף לטרקטורונים וכלי שטח, בנויה עם Docker Compose, עם מערכת ניהול למנהלים ואינטגרציה עם Verifone VeriPAY.
+> **מסמך זה משמש כמקור מידע מרכזי לפרויקט.** בעת פתיחת סשן חדש, קרא קודם את הקובץ הזה כדי להבין את המבנה, הארכיטקטורה והפרטים הטכניים. כל שינוי משמעותי בפרויקט צריך להתעדכן גם כאן.
 
-## תכונות
+---
 
-- 🛒 **קטלוג מוצרים מלא** - חיפוש, סינון לפי קטגוריות, תצוגת פרטי מוצר
-- 🛍️ **עגלת קניות** - הוספה, עדכון ומחיקת מוצרים
-- 👤 **מערכת משתמשים** - הרשמה, התחברות וניהול הזמנות
-- 👨‍💼 **פאנל מנהל** - ניהול מוצרים, קטגוריות והזמנות
-- 💳 **תשלומים מאובטחים** - אינטגרציה עם Verifone VeriPAY
-- 📦 **ניהול הזמנות** - מעקב אחר הזמנות קודמות
-- 🎨 **ממשק משתמש מודרני** - עיצוב רספונסיבי ונוח
-- 🐳 **Docker Compose** - הפעלה קלה עם כל השירותים
-- 🌐 **Nginx** - שרת פרוקסי וסטטיקי יעיל
+## תיאור הפרויקט
+
+חנות מקוונת מקצועית למכירת חלקי חילוף לטרקטורונים וכלי שטח. בנויה עם Docker Compose, עם מערכת ניהול למנהלים ואינטגרציה עם Cardcom לתשלומים.
+
+---
+
+## ארכיטקטורה
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   Nginx (80)    │────▶│  Backend (5000)  │────▶│  PostgreSQL     │
+│   Frontend SPA  │     │  Node.js/Express │     │  (5432)         │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+```
+
+- **Frontend**: React SPA (Vite) - מוגש דרך Nginx
+- **Backend**: Node.js + Express API
+- **Database**: PostgreSQL
+- **Proxy**: Nginx מפנה `/api` ל-backend
+
+---
 
 ## מבנה הפרויקט
 
 ```
 DohelMoto-Lightsail/
-├── backend/          # שרת API (Node.js/Express)
-├── frontend/         # אפליקציית React
+├── backend/                 # שרת API
+│   ├── server.js           # שרת Express מלא (כל ה-routes ביחד)
+│   ├── scripts/
+│   │   └── seed.js         # אתחול DB עם נתונים לדוגמה
+│   ├── Dockerfile
+│   └── package.json
+├── frontend/                # אפליקציית React
+│   ├── src/
+│   │   ├── App.jsx         # קומפוננטות ראשיות + routing
+│   │   ├── AdminPanel.jsx   # פאנל ניהול
+│   │   ├── PaymentCallback.jsx
+│   │   ├── App.css
+│   │   ├── index.css
+│   │   └── main.jsx
+│   ├── nginx.conf          # Nginx config (proxy + SPA)
+│   ├── Dockerfile
+│   └── package.json
 ├── docker-compose.yml
+├── rebuild.sh              # סקריפט: git add, commit, push
 └── README.md
 ```
 
-## התקנה והפעלה
+---
 
-### דרישות מוקדמות
-- Docker Engine
-- Docker Compose Plugin (מותקן עם Docker CE)
+## סכמת מסד הנתונים
 
-### הפעלה
+### טבלאות עיקריות
 
-**אפשרות 1: שימוש בסקריפט (מומלץ)**
-```bash
-docker compose up --build -d
-sleep 10
-docker compose exec -T backend npm run seed
-```
+| טבלה | תיאור |
+|------|--------|
+| `users` | משתמשים, כולל role (user/admin), vehicle_brand, vehicle_model |
+| `vehicles` | קטלוג כלי רכב (brand, brand_he, model, model_he, type) |
+| `categories` | קטגוריות מוצרים (name, name_he, description, image_url) |
+| `products` | מוצרים (name, name_he, price, sale_price, stock, sku, compatible_models, images[]) |
+| `cart` | עגלת קניות (user_id, product_id, quantity) |
+| `orders` | הזמנות (user_id, total_amount, status, payment_status, cardcom_token) |
+| `order_items` | פריטי הזמנה |
+| `about_page` | תוכן דינמי לעמוד אודות (who_we_are, vision, why_choose_us, רשתות חברתיות) |
 
-**אפשרות 2: הפעלה ידנית**
-```bash
-# 1. הפעל את כל השירותים
-docker compose up --build -d
+### טבלת product_variants (אופציונלית)
+- קיימת אם יש וריאנטים למוצרים
+- Backend מחזיר [] אם הטבלה לא קיימת
 
-# 2. המתן כמה שניות שהשירותים יעלו
-sleep 10
-
-# 3. אתחל את מסד הנתונים עם נתונים לדוגמה
-docker compose exec -T backend npm run seed
-```
-
-**4. פתח בדפדפן:**
-```
-http://localhost
-```
-
-### הפסקת השירותים
-```bash
-docker compose down
-```
-
-## משתמשי מנהל
-
-לאחר הרצת seed, נוצרו שני משתמשי מנהל:
-
-1. **מנהל ראשי**:
-   - **אימייל**: admin@dohelmoto.com
-   - **סיסמה**: admin123
-
-2. **מנהל בדיקה**:
-   - **אימייל**: test@dohelmoto.com
-   - **סיסמה**: test123
-
-התחבר עם פרטי המנהל כדי לגשת לפאנל הניהול בכתובת: `/admin`
-
-## שירותים
-
-- **Frontend**: `http://localhost` (Nginx)
-- **Backend API**: `http://localhost:5000`
-- **PostgreSQL**: `localhost:5432`
-
-## קטגוריות מוצרים
-
-- צמיגים וג'אנטים
-- חלקי פלסטיק
-- פגושים
-- אביזרים
-- חלקי חילוף
+---
 
 ## API Endpoints
 
-### מוצרים
-- `GET /api/products` - רשימת מוצרים
-- `GET /api/products/:id` - פרטי מוצר
-- `GET /api/categories` - רשימת קטגוריות
-
-### משתמשים
-- `POST /api/register` - הרשמה
-- `POST /api/login` - התחברות
-
-### עגלה
-- `GET /api/cart/:userId` - קבלת עגלה
-- `POST /api/cart` - הוספה לעגלה
-- `PUT /api/cart/:id` - עדכון כמות
-- `DELETE /api/cart/:id` - מחיקה מעגלה
-
-### הזמנות
-- `POST /api/orders` - יצירת הזמנה
-- `GET /api/orders/:userId` - רשימת הזמנות
-
-### מנהל (דורש הרשאות admin)
-- `GET /api/admin/products` - רשימת כל המוצרים
-- `POST /api/admin/products` - יצירת מוצר חדש
-- `PUT /api/admin/products/:id` - עדכון מוצר
-- `DELETE /api/admin/products/:id` - מחיקת מוצר
-- `GET /api/admin/orders` - רשימת כל ההזמנות
-- `PUT /api/admin/orders/:id/status` - עדכון סטטוס הזמנה
-- `POST /api/admin/categories` - יצירת קטגוריה
-- `PUT /api/admin/categories/:id` - עדכון קטגוריה
-- `DELETE /api/admin/categories/:id` - מחיקת קטגוריה
-
-### תשלומים (Cardcom)
-- `POST /api/payment/cardcom/init` - אתחול תשלום
-- `POST /api/payment/cardcom/callback` - callback מתשלום
-
-## הגדרת Cardcom
-
-על מנת להפעיל את מערכת התשלומים, עדכן את הקובץ `.env` ב-backend:
-
-```env
-CARDCOM_API_URL=https://secure.cardcom.solutions
-CARDCOM_TERMINAL_ID=your_terminal_id
-CARDCOM_USERNAME=your_username
-CARDCOM_PASSWORD=your_password
-FRONTEND_URL=http://localhost
-BACKEND_URL=http://localhost:5000
+### ציבורי
+```http
+GET  /api/health
+GET  /api/categories
+GET  /api/vehicles
+GET  /api/vehicles/models?brand=
+GET  /api/products?category_id=&search=&vehicle_brand=&vehicle_model=&page=&limit=
+GET  /api/products/:id
+GET  /api/products/:id/variants
+GET  /api/about
+POST /api/register
+POST /api/login
 ```
 
-## פיתוח
-
-### Backend
-```bash
-cd backend
-npm install
-npm run dev
+### דורש Auth (Bearer token)
+```http
+GET  /api/cart/:userId
+POST /api/cart
+PUT  /api/cart/:id
+DELETE /api/cart/:id
+POST /api/orders
+GET  /api/orders/:userId
+GET  /api/user/vehicle
+PUT  /api/user/vehicle
+POST /api/payment/cardcom/init
 ```
 
-### Frontend
-```bash
-cd frontend
-npm install
-npm run dev
+### Admin (דורש role=admin)
+```http
+GET  /api/admin/products
+POST /api/admin/products
+PUT  /api/admin/products/:id
+DELETE /api/admin/products/:id
+GET  /api/admin/orders
+PUT  /api/admin/orders/:id/status
+POST /api/admin/categories
+PUT  /api/admin/categories/:id
+DELETE /api/admin/categories/:id
+GET  /api/admin/about
+PUT  /api/admin/about
 ```
 
-## פתרון בעיות
-
-### Docker daemon לא רץ
-```bash
-sudo service docker start
-# או
-sudo systemctl start docker
+### Callback (ללא auth)
+```http
+POST /api/payment/cardcom/callback
 ```
 
-### שגיאת הרשאות Docker
-```bash
-sudo usermod -aG docker $USER
-newgrp docker  # או התנתק והתחבר מחדש
-```
+---
 
-### בדיקת מצב השירותים
-```bash
-docker compose ps
-docker compose logs -f
-```
+## Frontend - Routes ו-Components
+
+| Route | Component | תיאור |
+|-------|-----------|--------|
+| `/` | Home | דף בית, קטגוריות ומוצרים מומלצים |
+| `/products` | Products | רשימת מוצרים עם סינון (קטגוריה, חיפוש, כלי רכב, מיון) |
+| `/product/:id` | ProductDetail | פרטי מוצר, גלריית תמונות, וריאנטים |
+| `/categories` | Categories | כל הקטגוריות |
+| `/cart` | Cart | עגלה + תשלום Cardcom |
+| `/login` | Login | התחברות/הרשמה |
+| `/orders` | Orders | הזמנות המשתמש |
+| `/about` | About | תוכן דינמי מ-about_page |
+| `/customer-service` | CustomerService | טופס יצירת קשר (סטטיק) |
+| `/admin` | AdminPanel | ניהול מוצרים, קטגוריות, הזמנות, אודות |
+| `/payment/success` | PaymentCallback | success |
+| `/payment/cancel` | PaymentCallback | cancel |
+| `/payment/error` | PaymentCallback | error |
+
+---
 
 ## טכנולוגיות
 
-- **Frontend**: React, Vite, React Router
-- **Backend**: Node.js, Express, PostgreSQL
-- **Database**: PostgreSQL
-- **Web Server**: Nginx
-- **Containerization**: Docker, Docker Compose
-- **Payment Gateway**: Cardcom
+| שכבה | טכנולוגיות |
+|------|------------|
+| Frontend | React 18, Vite, React Router, Axios, react-icons |
+| Backend | Node.js, Express, pg (PostgreSQL), bcryptjs, jsonwebtoken, axios |
+| DB | PostgreSQL 15 |
+| Web Server | Nginx (Alpine) |
+| Container | Docker, Docker Compose |
+
+---
+
+## התקנה והפעלה
+
+### דרישות
+- Docker Engine
+- Docker Compose Plugin
+
+### הפעלה
+```bash
+docker compose up --build -d
+sleep 10
+docker compose exec -T backend npm run seed
+```
+
+### כתובות
+- **Frontend**: http://localhost
+- **Backend API**: http://localhost:5000
+- **PostgreSQL**: localhost:5432
+
+### משתמשי מנהל (seed)
+| אימייל | סיסמה |
+|--------|--------|
+| admin@dohelmoto.com | admin123 |
+| test@dohelmoto.com | test123 |
+
+---
+
+## משתני סביבה (Backend)
+
+| משתנה | תיאור |
+|-------|--------|
+| `DATABASE_URL` | חיבור PostgreSQL |
+| `JWT_SECRET` | מפתח JWT |
+| `CARDCOM_API_URL` | כתובת Cardcom |
+| `CARDCOM_TERMINAL_ID` | מזהה טרמינל |
+| `CARDCOM_USERNAME` | שם משתמש |
+| `CARDCOM_PASSWORD` | סיסמה |
+| `FRONTEND_URL` | כתובת Frontend (ל-redirects) |
+| `BACKEND_URL` | כתובת Backend (ל-callback) |
+
+---
+
+## פיתוח מקומי
+
+```bash
+# Backend
+cd backend && npm install && npm run dev
+
+# Frontend
+cd frontend && npm install && npm run dev
+```
+
+Frontend dev: http://localhost:3000
+
+---
+
+## בעיות ידועות / TODO
+
+1. ~~**Login - vehicles ו-vehicleModels**~~ תוקן: הוספתי vehicles, vehicleModels ו-formData.vehicle_brand/model ל-Login.
+
+2. **CustomerService**: טופס יצירת קשר לא מחובר ל-backend - רק console.log.
+
+3. **vehicles.ON CONFLICT**: ב-seed.js יש `ON CONFLICT DO NOTHING` ל-vehicles אבל לא הוגדר UNIQUE - ייתכן שזה לא יעבוד.
+
+4. **PaymentCallback**: שולח callback ל-backend עם transaction_id - אבל Cardcom קורא ל-callback עם פרמטרים שונים (ResponseCode, TransactionId, OrderId, LowProfileCode). יש לוודא התאמה.
+
+5. **Admin variants API**: ProductsTab קורא ל-`/api/admin/products/:id/variants` - ה-endpoint לא קיים ב-backend.
+
+---
+
+## עדכון README
+
+**כל שינוי משמעותי בפרויקט צריך להתעדכן ב-README:**
+- הוספת/שינוי API endpoints
+- הוספת/שינוי routes או components
+- שינוי סכמת DB
+- שינוי משתני סביבה
+- תיקון באגים
+- הוספת תכונות
+
+---
 
 ## רישיון
 
