@@ -212,7 +212,145 @@ const AdminPanel = ({ user, onLogout }) => {
   )
 }
 
+// VariantsModal - ניהול דגמים
+const VariantsModal = ({ product, variants, setVariants, onClose, getAuthHeaders }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    name_he: '',
+    price: '',
+    sale_price: '',
+    image_url: '',
+    stock: '',
+    sku: ''
+  })
+  const [editingVariant, setEditingVariant] = useState(null)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    try {
+      if (editingVariant) {
+        await axios.put(`${API_URL}/admin/variants/${editingVariant.id}`, formData, getAuthHeaders())
+      } else {
+        await axios.post(`${API_URL}/admin/products/${product.id}/variants`, formData, getAuthHeaders())
+      }
+      const res = await axios.get(`${API_URL}/admin/products/${product.id}/variants`, getAuthHeaders())
+      setVariants(res.data)
+      setFormData({ name: '', name_he: '', price: '', sale_price: '', image_url: '', stock: '', sku: '' })
+      setEditingVariant(null)
+    } catch (error) {
+      console.error('Error saving variant:', error)
+      alert('שגיאה בשמירת הדגם')
+    }
+  }
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('האם אתה בטוח שברצונך למחוק דגם זה?')) return
+    try {
+      await axios.delete(`${API_URL}/admin/variants/${id}`, getAuthHeaders())
+      const res = await axios.get(`${API_URL}/admin/products/${product.id}/variants`, getAuthHeaders())
+      setVariants(res.data)
+    } catch (error) {
+      console.error('Error deleting variant:', error)
+      alert('שגיאה במחיקת הדגם')
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>נהל דגמים - {product.name_he}</h2>
+          <button onClick={onClose} className="modal-close">×</button>
+        </div>
+        <form onSubmit={handleSubmit} className="modal-form">
+          <div className="form-row">
+            <div className="form-group">
+              <label>שם דגם (אנגלית)</label>
+              <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required />
+            </div>
+            <div className="form-group">
+              <label>שם דגם (עברית)</label>
+              <input type="text" value={formData.name_he} onChange={(e) => setFormData({...formData, name_he: e.target.value})} required />
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>מחיר (₪)</label>
+              <input type="number" step="0.01" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} required />
+            </div>
+            <div className="form-group">
+              <label>מחיר מבצע (₪) - אופציונלי</label>
+              <input type="number" step="0.01" value={formData.sale_price} onChange={(e) => setFormData({...formData, sale_price: e.target.value})} />
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>תמונת דגם (URL)</label>
+              <input type="text" value={formData.image_url} onChange={(e) => setFormData({...formData, image_url: e.target.value})} placeholder="קישור לתמונה" />
+            </div>
+            <div className="form-group">
+              <label>מק"ט</label>
+              <input type="text" value={formData.sku} onChange={(e) => setFormData({...formData, sku: e.target.value})} />
+            </div>
+          </div>
+          <div className="form-group">
+            <label>מלאי</label>
+            <input type="number" value={formData.stock} onChange={(e) => setFormData({...formData, stock: e.target.value})} />
+          </div>
+          <div className="modal-actions">
+            <button type="submit" className="btn btn-primary">{editingVariant ? 'עדכן דגם' : 'הוסף דגם'}</button>
+            {editingVariant && (
+              <button type="button" onClick={() => { setEditingVariant(null); setFormData({ name: '', name_he: '', price: '', sale_price: '', image_url: '', stock: '', sku: '' }) }} className="btn btn-outline">ביטול</button>
+            )}
+          </div>
+        </form>
+        <div style={{ marginTop: '20px' }}>
+          <h3>דגמים קיימים:</h3>
+          {variants.length === 0 ? (
+            <p>אין דגמים</p>
+          ) : (
+            <table className="admin-table" style={{ marginTop: '10px' }}>
+              <thead>
+                <tr><th>שם</th><th>מחיר</th><th>מלאי</th><th>פעולות</th></tr>
+              </thead>
+              <tbody>
+                {variants.map(variant => (
+                  <tr key={variant.id}>
+                    <td>{variant.name_he}</td>
+                    <td>₪{variant.price}</td>
+                    <td>{variant.stock}</td>
+                    <td>
+                      <button onClick={() => { setEditingVariant(variant); setFormData(variant) }} className="btn-icon"><FiEdit /></button>
+                      <button onClick={() => handleDelete(variant.id)} className="btn-icon btn-danger"><FiTrash2 /></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const ProductsTab = ({ products, loading, onAdd, onEdit, onDelete, showModal, editingProduct, onClose, getAuthHeaders }) => {
+  const [showVariantsModal, setShowVariantsModal] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState(null)
+  const [variants, setVariants] = useState([])
+
+  const onManageVariants = async (product) => {
+    setSelectedProduct(product)
+    try {
+      const res = await axios.get(`${API_URL}/admin/products/${product.id}/variants`, getAuthHeaders())
+      setVariants(res.data)
+      setShowVariantsModal(true)
+    } catch (error) {
+      console.error('Error loading variants:', error)
+      alert('שגיאה בטעינת הדגמים')
+    }
+  }
+
   const [formData, setFormData] = useState({
     name: '',
     name_he: '',
@@ -311,6 +449,16 @@ const ProductsTab = ({ products, loading, onAdd, onEdit, onDelete, showModal, ed
         />
       )}
 
+      {showVariantsModal && selectedProduct && (
+        <VariantsModal
+          product={selectedProduct}
+          variants={variants}
+          setVariants={setVariants}
+          onClose={() => { setShowVariantsModal(false); setSelectedProduct(null); setVariants([]) }}
+          getAuthHeaders={getAuthHeaders}
+        />
+      )}
+
       {loading ? (
         <div className="loading">טוען מוצרים...</div>
       ) : products.length === 0 ? (
@@ -341,6 +489,9 @@ const ProductsTab = ({ products, loading, onAdd, onEdit, onDelete, showModal, ed
                     <td>
                       <button onClick={() => onEdit(product)} className="btn-icon">
                         <FiEdit />
+                      </button>
+                      <button onClick={() => onManageVariants(product)} className="btn-icon" style={{ marginRight: '8px' }} title="נהל דגמים">
+                        📦
                       </button>
                       <button onClick={() => onDelete(product.id)} className="btn-icon btn-danger">
                         <FiTrash2 />
@@ -375,6 +526,9 @@ const ProductsTab = ({ products, loading, onAdd, onEdit, onDelete, showModal, ed
                 <div className="product-card-actions">
                   <button onClick={() => onEdit(product)} className="btn-icon" title="ערוך">
                     <FiEdit />
+                  </button>
+                  <button onClick={() => onManageVariants(product)} className="btn-icon" title="נהל דגמים">
+                    📦
                   </button>
                   <button onClick={() => onDelete(product.id)} className="btn-icon btn-danger" title="מחק">
                     <FiTrash2 />

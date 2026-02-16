@@ -208,6 +208,22 @@ const initDatabase = async () => {
       ON CONFLICT (product_id, category_id) DO NOTHING
     `);
 
+    // Product variants table (דגמים)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS product_variants (
+        id SERIAL PRIMARY KEY,
+        product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        name_he VARCHAR(255) NOT NULL,
+        price DECIMAL(10, 2) NOT NULL,
+        sale_price DECIMAL(10, 2),
+        image_url VARCHAR(500),
+        stock INTEGER DEFAULT 0,
+        sku VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // Cart table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS cart (
@@ -920,6 +936,75 @@ app.get('/api/admin/products', authenticateToken, requireAdmin, async (req, res)
   } catch (error) {
     console.error('Error fetching products:', error);
     res.status(500).json({ error: 'Failed to fetch products' });
+  }
+});
+
+// Admin: Get product variants
+app.get('/api/admin/products/:id/variants', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      'SELECT * FROM product_variants WHERE product_id = $1 ORDER BY id',
+      [id]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching variants:', error);
+    res.status(500).json({ error: 'Failed to fetch variants' });
+  }
+});
+
+// Admin: Create product variant
+app.post('/api/admin/products/:id/variants', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, name_he, price, sale_price, image_url, stock, sku } = req.body;
+    const result = await pool.query(
+      `INSERT INTO product_variants (product_id, name, name_he, price, sale_price, image_url, stock, sku)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      [id, name, name_he, parseFloat(price), sale_price ? parseFloat(sale_price) : null, image_url || null, parseInt(stock || 0), sku || null]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Error creating variant:', error);
+    res.status(500).json({ error: 'Failed to create variant' });
+  }
+});
+
+// Admin: Update variant
+app.put('/api/admin/variants/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, name_he, price, sale_price, image_url, stock, sku } = req.body;
+    const result = await pool.query(
+      `UPDATE product_variants SET 
+        name = $1, name_he = $2, price = $3, sale_price = $4,
+        image_url = $5, stock = $6, sku = $7
+       WHERE id = $8 RETURNING *`,
+      [name, name_he, parseFloat(price), sale_price ? parseFloat(sale_price) : null, image_url || null, parseInt(stock || 0), sku || null, id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Variant not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating variant:', error);
+    res.status(500).json({ error: 'Failed to update variant' });
+  }
+});
+
+// Admin: Delete variant
+app.delete('/api/admin/variants/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('DELETE FROM product_variants WHERE id = $1 RETURNING *', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Variant not found' });
+    }
+    res.json({ deleted: true });
+  } catch (error) {
+    console.error('Error deleting variant:', error);
+    res.status(500).json({ error: 'Failed to delete variant' });
   }
 });
 
