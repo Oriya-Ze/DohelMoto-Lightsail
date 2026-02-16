@@ -9,16 +9,15 @@ import PaymentCallback from './PaymentCallback'
 const API_URL = '/api'
 
 // Floating WhatsApp button - always visible on the side
+const DEFAULT_WHATSAPP = 'https://wa.me/972500000000' // placeholder - update in admin
 const WhatsAppFloating = () => {
-  const [whatsappUrl, setWhatsappUrl] = useState(null)
+  const [whatsappUrl, setWhatsappUrl] = useState(DEFAULT_WHATSAPP)
 
   useEffect(() => {
     axios.get(`${API_URL}/about`).then(res => {
       if (res.data?.whatsapp_url) setWhatsappUrl(res.data.whatsapp_url)
     }).catch(() => {})
   }, [])
-
-  if (!whatsappUrl) return null
 
   return (
     <a
