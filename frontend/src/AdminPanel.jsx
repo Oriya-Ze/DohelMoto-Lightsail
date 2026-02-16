@@ -46,6 +46,12 @@ const AdminPanel = ({ user, onLogout }) => {
   const loadData = async () => {
     setLoading(true)
     try {
+      const token = localStorage.getItem('token')
+      if (!token && (activeTab === 'products' || activeTab === 'orders' || activeTab === 'about')) {
+        alert('נא להתחבר מחדש')
+        window.location.href = '/login'
+        return
+      }
       if (activeTab === 'products') {
         const res = await axios.get(`${API_URL}/admin/products`, getAuthHeaders())
         setProducts(res.data)
@@ -61,7 +67,16 @@ const AdminPanel = ({ user, onLogout }) => {
       }
     } catch (error) {
       console.error('Error loading data:', error)
-      alert('שגיאה בטעינת הנתונים')
+      const status = error.response?.status
+      const msg = error.response?.data?.error || error.message
+      if (status === 401 || status === 403) {
+        alert('ההתחברות פגה. נא להתחבר מחדש.')
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        window.location.href = '/login'
+      } else {
+        alert(`שגיאה בטעינת הנתונים: ${msg || 'לא ניתן להתחבר לשרת'}`)
+      }
     } finally {
       setLoading(false)
     }
