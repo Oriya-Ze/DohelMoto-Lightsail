@@ -552,22 +552,12 @@ const ProductCard = ({ product }) => {
         ) : (
           <p className="product-price">₪{parseFloat(product.price || 0).toFixed(2)}</p>
         )}
-        {product.stock !== undefined && (
-          <p style={{ 
-            fontSize: '12px', 
-            color: product.stock > 0 ? '#10b981' : '#991b1b',
-            marginBottom: '8px'
-          }}>
-            {product.stock > 0 ? `במלאי (${product.stock})` : 'אין במלאי'}
-          </p>
-        )}
         <button 
           onClick={addToCart} 
           className="btn btn-primary" 
           style={{ width: '100%' }}
-          disabled={product.stock === 0}
         >
-          {product.stock === 0 ? 'אין במלאי' : 'הוסף לעגלה'}
+          הוסף לעגלה
         </button>
         <Link to={`/product/${product.id}`} className="btn btn-outline" style={{ width: '100%', marginTop: '8px' }}>
           פרטים נוספים
@@ -682,12 +672,6 @@ const ProductDetail = () => {
     }
     
     const productToAdd = selectedVariant || product
-    const isOutOfStock = (productToAdd.stock || 0) === 0
-    
-    if (isOutOfStock) {
-      alert('המוצר לא במלאי')
-      return
-    }
     
     axios.post(`${API_URL}/cart`, {
       user_id: user.id,
@@ -828,16 +812,6 @@ const ProductDetail = () => {
             ) : (
               <p className="product-price large">₪{parseFloat(currentProduct?.price || product.price || 0).toFixed(2)}</p>
             )}
-            {currentProduct?.stock !== undefined && (
-              <p style={{ 
-                fontSize: '16px', 
-                color: (currentProduct.stock || 0) > 0 ? '#10b981' : '#991b1b',
-                marginBottom: '16px',
-                fontWeight: '600'
-              }}>
-                {(currentProduct.stock || 0) > 0 ? `✓ במלאי (${currentProduct.stock} יחידות)` : '✗ אין במלאי'}
-              </p>
-            )}
             <div className="product-description">
               <h3>תיאור המוצר:</h3>
               <p>{product.description_he || product.description}</p>
@@ -857,9 +831,8 @@ const ProductDetail = () => {
                 onClick={addToCart} 
                 className="btn btn-primary" 
                 style={{ fontSize: '18px', padding: '16px 32px' }}
-                disabled={(currentProduct?.stock || product.stock || 0) === 0}
               >
-                {(currentProduct?.stock || product.stock || 0) === 0 ? 'אין במלאי' : 'הוסף לעגלה'}
+                הוסף לעגלה
               </button>
             </div>
           </div>
