@@ -407,7 +407,7 @@ const ProductsTab = ({ products, loading, onAdd, onEdit, onDelete, showModal, ed
     description_he: '',
     price: '',
     sale_price: '',
-    category_id: '',
+    category_ids: [],
     image_url: '',
     images: [],
     stock: '',
@@ -419,8 +419,10 @@ const ProductsTab = ({ products, loading, onAdd, onEdit, onDelete, showModal, ed
 
   useEffect(() => {
     if (editingProduct) {
+      const catIds = editingProduct.category_ids || (editingProduct.category_id ? [editingProduct.category_id] : [])
       setFormData({
         ...editingProduct,
+        category_ids: catIds.map(Number),
         images: Array.isArray(editingProduct.images) ? editingProduct.images : [],
         compatible_models: Array.isArray(editingProduct.compatible_models) 
           ? editingProduct.compatible_models.join(', ') 
@@ -434,7 +436,7 @@ const ProductsTab = ({ products, loading, onAdd, onEdit, onDelete, showModal, ed
         description_he: '',
         price: '',
         sale_price: '',
-        category_id: '',
+        category_ids: [],
         image_url: '',
         images: [],
         stock: '',
@@ -449,12 +451,19 @@ const ProductsTab = ({ products, loading, onAdd, onEdit, onDelete, showModal, ed
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
+      const category_ids = Array.isArray(formData.category_ids) 
+        ? formData.category_ids.filter(Boolean).map(Number) 
+        : []
+      if (category_ids.length === 0) {
+        alert('נא לבחור לפחות קטגוריה אחת')
+        return
+      }
       const data = {
         ...formData,
         price: parseFloat(formData.price),
         sale_price: formData.sale_price ? parseFloat(formData.sale_price) : null,
         stock: parseInt(formData.stock),
-        category_id: parseInt(formData.category_id),
+        category_ids,
         images: Array.isArray(formData.images) ? formData.images.filter(img => img.trim()) : [],
         compatible_models: formData.compatible_models.split(',').map(m => m.trim()).filter(m => m)
       }
@@ -1140,17 +1149,29 @@ const ProductModal = ({ formData, setFormData, onSubmit, onClose, editing }) => 
             </div>
           </div>
           <div className="form-group">
-            <label>קטגוריה</label>
-            <select 
-              value={formData.category_id} 
-              onChange={(e) => setFormData({...formData, category_id: e.target.value})}
-              required
-            >
-              <option value="">בחר קטגוריה</option>
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name_he}</option>
-              ))}
-            </select>
+            <label>קטגוריות (ניתן לבחור כמה)</label>
+            <div className="category-checkboxes" style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto', padding: '12px', border: '2px solid #e5e7eb', borderRadius: '8px', marginTop: '8px' }}>
+              {categories.map(cat => {
+                const checked = (formData.category_ids || []).includes(Number(cat.id))
+                return (
+                  <label key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => {
+                        const ids = [...(formData.category_ids || [])]
+                        const numId = Number(cat.id)
+                        const newIds = e.target.checked
+                          ? (ids.includes(numId) ? ids : [...ids, numId])
+                          : ids.filter(i => i !== numId)
+                        setFormData({...formData, category_ids: newIds})
+                      }}
+                    />
+                    <span>{cat.name_he}</span>
+                  </label>
+                )
+              })}
+            </div>
           </div>
           <div className="form-group">
             <label>קישור תמונה ראשית</label>

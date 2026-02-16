@@ -350,6 +350,18 @@ const seedData = async () => {
       );
     }
 
+    // Populate product_categories from products.category_id (many-to-many)
+    try {
+      await pool.query(`
+        INSERT INTO product_categories (product_id, category_id)
+        SELECT id, category_id FROM products WHERE category_id IS NOT NULL
+        ON CONFLICT (product_id, category_id) DO NOTHING
+      `);
+      console.log('Product categories linked');
+    } catch (e) {
+      console.log('Note: product_categories table may not exist yet - run server first');
+    }
+
     console.log('Database seeded successfully!');
     process.exit(0);
   } catch (error) {

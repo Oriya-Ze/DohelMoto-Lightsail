@@ -192,6 +192,22 @@ const initDatabase = async () => {
       END $$;
     `);
 
+    // Product-Categories (many-to-many)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS product_categories (
+        product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
+        category_id INTEGER REFERENCES categories(id) ON DELETE CASCADE,
+        PRIMARY KEY (product_id, category_id)
+      )
+    `);
+
+    // Migration: populate product_categories from existing products.category_id
+    await pool.query(`
+      INSERT INTO product_categories (product_id, category_id)
+      SELECT id, category_id FROM products WHERE category_id IS NOT NULL
+      ON CONFLICT (product_id, category_id) DO NOTHING
+    `);
+
     // Cart table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS cart (
@@ -417,19 +433,21 @@ app.get('/api/vehicles/models', async (req, res) => {
 app.get('/api/products', async (req, res) => {
   try {
     const { category_id, search, page = 1, limit = 20, vehicle_brand, vehicle_model } = req.query;
-    let query = 'SELECT * FROM products WHERE 1=1';
+    let query = 'SELECT DISTINCT p.* FROM products p';
     const params = [];
     let paramCount = 0;
 
     if (category_id) {
       paramCount++;
-      query += ` AND category_id = $${paramCount}`;
+      query += ` INNER JOIN product_categories pc ON p.id = pc.product_id AND pc.category_id = $${paramCount}`;
       params.push(category_id);
     }
 
+    query += ' WHERE 1=1';
+
     if (search) {
       paramCount++;
-      query += ` AND (name ILIKE $${paramCount} OR name_he ILIKE $${paramCount} OR description ILIKE $${paramCount})`;
+      query += ` AND (p.name ILIKE $${paramCount} OR p.name_he ILIKE $${paramCount} OR p.description ILIKE $${paramCount})`;
       params.push(`%${search}%`);
     }
 
@@ -438,14 +456,12 @@ app.get('/api/products', async (req, res) => {
       const vehicleFilter = [];
       if (vehicle_brand) {
         paramCount++;
-        // Search for brand in compatible_models array
-        vehicleFilter.push(`$${paramCount} = ANY(compatible_models)`);
+        vehicleFilter.push(`$${paramCount} = ANY(p.compatible_models)`);
         params.push(vehicle_brand);
       }
       if (vehicle_model) {
         paramCount++;
-        // Search for model in compatible_models array
-        vehicleFilter.push(`$${paramCount} = ANY(compatible_models)`);
+        vehicleFilter.push(`$${paramCount} = ANY(p.compatible_models)`);
         params.push(vehicle_model);
       }
       if (vehicleFilter.length > 0) {
@@ -455,14 +471,30 @@ app.get('/api/products', async (req, res) => {
 
     const offset = (page - 1) * limit;
     paramCount++;
-    query += ` ORDER BY created_at DESC LIMIT $${paramCount}`;
+    query += ` ORDER BY p.created_at DESC LIMIT $${paramCount}`;
     params.push(limit);
     paramCount++;
     query += ` OFFSET $${paramCount}`;
     params.push(offset);
 
     const result = await pool.query(query, params);
-    res.json(result.rows);
+    const productIds = result.rows.map(r => r.id);
+    const categoryIdsMap = {};
+    if (productIds.length > 0) {
+      const catResult = await pool.query(
+        'SELECT product_id, category_id FROM product_categories WHERE product_id = ANY($1)',
+        [productIds]
+      );
+      catResult.rows.forEach(row => {
+        if (!categoryIdsMap[row.product_id]) categoryIdsMap[row.product_id] = [];
+        categoryIdsMap[row.product_id].push(row.category_id);
+      });
+    }
+    const productsWithCats = result.rows.map(p => ({
+      ...p,
+      category_ids: categoryIdsMap[p.id] || (p.category_id ? [p.category_id] : [])
+    }));
+    res.json(productsWithCats);
   } catch (error) {
     console.error('Error fetching products:', error);
     res.status(500).json({ error: 'Failed to fetch products' });
@@ -479,7 +511,10 @@ app.get('/api/products/:id', async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Product not found' });
     }
-    res.json(result.rows[0]);
+    const product = result.rows[0];
+    const catRes = await pool.query('SELECT category_id FROM product_categories WHERE product_id = $1', [id]);
+    product.category_ids = catRes.rows.map(r => r.category_id) || (product.category_id ? [product.category_id] : []);
+    res.json(product);
   } catch (error) {
     console.error('Error fetching product:', error);
     res.status(500).json({ error: 'Failed to fetch product' });
@@ -780,39 +815,68 @@ app.post('/api/login', async (req, res) => {
 
 // Admin Routes - Product Management
 app.post('/api/admin/products', authenticateToken, requireAdmin, async (req, res) => {
+  const client = await pool.connect();
   try {
-    const { name, name_he, description, description_he, price, sale_price, category_id, image_url, images, stock, sku, brand, compatible_models } = req.body;
-    const result = await pool.query(
+    const { name, name_he, description, description_he, price, sale_price, category_ids, image_url, images, stock, sku, brand, compatible_models } = req.body;
+    const catIds = Array.isArray(category_ids) ? category_ids.filter(Boolean).map(Number) : [];
+    const firstCatId = catIds.length > 0 ? catIds[0] : null;
+    const result = await client.query(
       `INSERT INTO products (name, name_he, description, description_he, price, sale_price, category_id, image_url, images, stock, sku, brand, compatible_models) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
-      [name, name_he, description, description_he, price, sale_price || null, category_id, image_url, images || [], stock, sku, brand, compatible_models || []]
+      [name, name_he, description, description_he, price, sale_price || null, firstCatId, image_url, images || [], stock, sku, brand, compatible_models || []]
     );
-    res.status(201).json(result.rows[0]);
+    const product = result.rows[0];
+    for (const cid of catIds) {
+      await client.query(
+        'INSERT INTO product_categories (product_id, category_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [product.id, cid]
+      );
+    }
+    const catRes = await client.query('SELECT category_id FROM product_categories WHERE product_id = $1', [product.id]);
+    product.category_ids = catRes.rows.map(r => r.category_id);
+    res.status(201).json(product);
   } catch (error) {
     console.error('Error creating product:', error);
     res.status(500).json({ error: 'Failed to create product' });
+  } finally {
+    client.release();
   }
 });
 
 app.put('/api/admin/products/:id', authenticateToken, requireAdmin, async (req, res) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
-    const { name, name_he, description, description_he, price, sale_price, category_id, image_url, images, stock, sku, brand, compatible_models, is_active } = req.body;
-    const result = await pool.query(
+    const { name, name_he, description, description_he, price, sale_price, category_ids, image_url, images, stock, sku, brand, compatible_models, is_active } = req.body;
+    const catIds = Array.isArray(category_ids) ? category_ids.filter(Boolean).map(Number) : [];
+    const firstCatId = catIds.length > 0 ? catIds[0] : null;
+    const result = await client.query(
       `UPDATE products 
        SET name = $1, name_he = $2, description = $3, description_he = $4, price = $5, sale_price = $6, category_id = $7, 
            image_url = $8, images = $9, stock = $10, sku = $11, brand = $12, compatible_models = $13, 
            is_active = $14, updated_at = CURRENT_TIMESTAMP
        WHERE id = $15 RETURNING *`,
-      [name, name_he, description, description_he, price, sale_price || null, category_id, image_url, images || [], stock, sku, brand, compatible_models || [], is_active !== undefined ? is_active : true, id]
+      [name, name_he, description, description_he, price, sale_price || null, firstCatId, image_url, images || [], stock, sku, brand, compatible_models || [], is_active !== undefined ? is_active : true, id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Product not found' });
     }
-    res.json(result.rows[0]);
+    await client.query('DELETE FROM product_categories WHERE product_id = $1', [id]);
+    for (const cid of catIds) {
+      await client.query(
+        'INSERT INTO product_categories (product_id, category_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [id, cid]
+      );
+    }
+    const product = result.rows[0];
+    const catRes = await client.query('SELECT category_id FROM product_categories WHERE product_id = $1', [id]);
+    product.category_ids = catRes.rows.map(r => r.category_id);
+    res.json(product);
   } catch (error) {
     console.error('Error updating product:', error);
     res.status(500).json({ error: 'Failed to update product' });
+  } finally {
+    client.release();
   }
 });
 
@@ -830,7 +894,23 @@ app.delete('/api/admin/products/:id', authenticateToken, requireAdmin, async (re
 app.get('/api/admin/products', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM products ORDER BY created_at DESC');
-    res.json(result.rows);
+    const productIds = result.rows.map(r => r.id);
+    const categoryIdsMap = {};
+    if (productIds.length > 0) {
+      const catResult = await pool.query(
+        'SELECT product_id, category_id FROM product_categories WHERE product_id = ANY($1)',
+        [productIds]
+      );
+      catResult.rows.forEach(row => {
+        if (!categoryIdsMap[row.product_id]) categoryIdsMap[row.product_id] = [];
+        categoryIdsMap[row.product_id].push(row.category_id);
+      });
+    }
+    const productsWithCats = result.rows.map(p => ({
+      ...p,
+      category_ids: categoryIdsMap[p.id] || (p.category_id ? [p.category_id] : [])
+    }));
+    res.json(productsWithCats);
   } catch (error) {
     console.error('Error fetching products:', error);
     res.status(500).json({ error: 'Failed to fetch products' });
