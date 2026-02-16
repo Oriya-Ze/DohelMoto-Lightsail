@@ -329,6 +329,12 @@ const initDatabase = async () => {
         ) THEN
           ALTER TABLE about_page ADD COLUMN tiktok_url VARCHAR(500);
         END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name='about_page' AND column_name='phone'
+        ) THEN
+          ALTER TABLE about_page ADD COLUMN phone VARCHAR(50);
+        END IF;
       END $$;
     `);
 
@@ -1043,7 +1049,8 @@ app.put('/api/admin/about', authenticateToken, requireAdmin, async (req, res) =>
       why_choose_us_items,
       whatsapp_url,
       instagram_url,
-      tiktok_url
+      tiktok_url,
+      phone
     } = req.body;
 
     // Check if record exists
@@ -1055,13 +1062,13 @@ app.put('/api/admin/about', authenticateToken, requireAdmin, async (req, res) =>
         INSERT INTO about_page (
           title, who_we_are_title, who_we_are_text, vision_title, vision_text,
           what_we_offer_title, what_we_offer_items, why_choose_us_title, why_choose_us_items,
-          whatsapp_url, instagram_url, tiktok_url
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *
+          whatsapp_url, instagram_url, tiktok_url, phone
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *
       `, [
         title, who_we_are_title, who_we_are_text, vision_title, vision_text,
         what_we_offer_title, what_we_offer_items || [], why_choose_us_title, 
         JSON.stringify(why_choose_us_items || []),
-        whatsapp_url || null, instagram_url || null, tiktok_url || null
+        whatsapp_url || null, instagram_url || null, tiktok_url || null, phone || null
       ]);
       res.json(result.rows[0]);
     } else {
@@ -1080,6 +1087,7 @@ app.put('/api/admin/about', authenticateToken, requireAdmin, async (req, res) =>
           whatsapp_url = $10,
           instagram_url = $11,
           tiktok_url = $12,
+          phone = $13,
           updated_at = CURRENT_TIMESTAMP
         WHERE id = (SELECT id FROM about_page ORDER BY id DESC LIMIT 1)
         RETURNING *
@@ -1087,7 +1095,7 @@ app.put('/api/admin/about', authenticateToken, requireAdmin, async (req, res) =>
         title, who_we_are_title, who_we_are_text, vision_title, vision_text,
         what_we_offer_title, what_we_offer_items || [], why_choose_us_title,
         JSON.stringify(why_choose_us_items || []),
-        whatsapp_url || null, instagram_url || null, tiktok_url || null
+        whatsapp_url || null, instagram_url || null, tiktok_url || null, phone || null
       ]);
       res.json(result.rows[0]);
     }

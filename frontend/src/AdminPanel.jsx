@@ -772,7 +772,8 @@ const AboutTab = ({ aboutContent, loading, getAuthHeaders, onUpdate }) => {
     why_choose_us_items: [],
     whatsapp_url: '',
     instagram_url: '',
-    tiktok_url: ''
+    tiktok_url: '',
+    phone: ''
   })
   const [newOfferItem, setNewOfferItem] = useState('')
   const [newWhyChooseItem, setNewWhyChooseItem] = useState({ title: '', text: '' })
@@ -795,7 +796,8 @@ const AboutTab = ({ aboutContent, loading, getAuthHeaders, onUpdate }) => {
               : []),
         whatsapp_url: aboutContent.whatsapp_url || '',
         instagram_url: aboutContent.instagram_url || '',
-        tiktok_url: aboutContent.tiktok_url || ''
+        tiktok_url: aboutContent.tiktok_url || '',
+        phone: aboutContent.phone || ''
       })
     }
   }, [aboutContent])
@@ -1048,6 +1050,15 @@ const AboutTab = ({ aboutContent, loading, getAuthHeaders, onUpdate }) => {
             value={formData.tiktok_url}
             onChange={(e) => setFormData({...formData, tiktok_url: e.target.value})}
             placeholder="https://tiktok.com/@your_account"
+          />
+        </div>
+        <div className="form-group">
+          <label>טלפון לחיוג (לכפתור הצף)</label>
+          <input
+            type="tel"
+            value={formData.phone}
+            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+            placeholder="050-1234567"
           />
         </div>
 
