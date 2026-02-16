@@ -7,6 +7,58 @@
   background: transparent;
 }
 
+/* Floating WhatsApp - always visible on the side */
+.whatsapp-floating {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #25D366;
+  color: white !important;
+  text-decoration: none;
+  padding: 12px 16px;
+  padding-left: 20px;
+  border-radius: 0 12px 12px 0;
+  box-shadow: 0 2px 12px rgba(37, 211, 102, 0.5);
+  z-index: 9998;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.whatsapp-floating:hover {
+  background: #20bd5a;
+  box-shadow: 0 4px 16px rgba(37, 211, 102, 0.6);
+  padding-left: 24px;
+}
+
+.whatsapp-floating-text {
+  white-space: nowrap;
+}
+
+.whatsapp-floating-icon {
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .whatsapp-floating {
+    padding: 10px 12px;
+    padding-left: 14px;
+    font-size: 13px;
+  }
+  
+  .whatsapp-floating-text {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
 main {
   position: relative;
   z-index: 1;

@@ -137,7 +137,7 @@ POST /api/payment/cardcom/callback
 | `/cart` | Cart | עגלה + תשלום Cardcom |
 | `/login` | Login | התחברות/הרשמה |
 | `/orders` | Orders | הזמנות המשתמש |
-| `/about` | About | תוכן דינמי מ-about_page |
+| `/about` | About | תוכן דינמי מ-about_page (ללא וואטסאפ - מופיע ככפתור צף) |
 | `/customer-service` | CustomerService | טופס יצירת קשר (סטטיק) |
 | `/admin` | AdminPanel | ניהול מוצרים, קטגוריות, הזמנות, אודות |
 | `/payment/success` | PaymentCallback | success |
@@ -224,6 +224,10 @@ Frontend dev: http://localhost:3000
 4. **PaymentCallback**: שולח callback ל-backend עם transaction_id - אבל Cardcom קורא ל-callback עם פרמטרים שונים (ResponseCode, TransactionId, OrderId, LowProfileCode). יש לוודא התאמה.
 
 5. **Admin variants API**: ProductsTab קורא ל-`/api/admin/products/:id/variants` - ה-endpoint לא קיים ב-backend.
+
+## רכיבים גלובליים
+
+- **WhatsAppFloating**: כפתור וואטסאפ קבוע בצד שמאל של המסך, עם הטקסט "לכל שאלה ניתן לפנות". מופיע רק כאשר whatsapp_url מוגדר בעמוד אודות (פאנל ניהול).
 
 ---
 
