@@ -120,11 +120,10 @@ const Home = () => {
 
   useEffect(() => {
     const loadData = () => {
-      axios.get(`${API_URL}/categories`).then(res => setCategories(res.data.slice(0, 6)))
+      axios.get(`${API_URL}/categories?_=${Date.now()}`).then(res => setCategories(res.data.slice(0, 6)))
       axios.get(`${API_URL}/products?limit=8`).then(res => setProducts(res.data))
     }
     loadData()
-    // Refresh every 5 seconds to catch updates
     const interval = setInterval(loadData, 5000)
     return () => clearInterval(interval)
   }, [])
@@ -136,15 +135,16 @@ const Home = () => {
           <h2 className="section-title">קטגוריות מובילות</h2>
           <div className="grid grid-3">
             {categories.slice(0, 6).map(cat => {
-              const imageUrl = cat.image_url || categoryImages[cat.name_he] || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop'
-              console.log(`Category ${cat.name_he} (id: ${cat.id}): image_url=${cat.image_url}, finalUrl=${imageUrl}`)
+              const rawUrl = (cat.image_url || '').trim()
+              const imageUrl = rawUrl || categoryImages[cat.name_he] || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop'
+              const safeUrl = imageUrl ? imageUrl.replace(/"/g, '%22') : ''
               return (
               <Link 
                 key={`${cat.id}-${cat.image_url || 'default'}`}
                 to={`/products?category=${cat.id}`} 
                 className="card category-card"
                 style={{ 
-                  backgroundImage: imageUrl ? `url("${imageUrl}")` : 'none',
+                  backgroundImage: safeUrl ? `url("${safeUrl}")` : 'none',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   backgroundRepeat: 'no-repeat',
@@ -182,7 +182,7 @@ const Categories = () => {
 
   useEffect(() => {
     const loadCategories = () => {
-      axios.get(`${API_URL}/categories`).then(res => {
+      axios.get(`${API_URL}/categories?_=${Date.now()}`).then(res => {
         console.log('Categories loaded:', res.data)
         setCategories(res.data)
         setLoading(false)
@@ -192,7 +192,6 @@ const Categories = () => {
       })
     }
     loadCategories()
-    // Refresh every 5 seconds to catch updates
     const interval = setInterval(loadCategories, 5000)
     return () => clearInterval(interval)
   }, [])
@@ -213,15 +212,16 @@ const Categories = () => {
         <h2 className="section-title">כל הקטגוריות</h2>
           <div className="grid grid-3">
             {categories.map(cat => {
-              const imageUrl = cat.image_url || categoryImages[cat.name_he] || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop'
-              console.log(`Category ${cat.name_he} (id: ${cat.id}): image_url=${cat.image_url}, finalUrl=${imageUrl}`)
+              const rawUrl = (cat.image_url || '').trim()
+              const imageUrl = rawUrl || categoryImages[cat.name_he] || 'https://images.unsplash.com/photo-1558980664-769d59546b3d?w=600&h=400&fit=crop'
+              const safeUrl = imageUrl ? imageUrl.replace(/"/g, '%22') : ''
               return (
               <Link 
                 key={`${cat.id}-${cat.image_url || 'default'}`}
                 to={`/products?category=${cat.id}`} 
                 className="card category-card"
                 style={{ 
-                  backgroundImage: imageUrl ? `url("${imageUrl}")` : 'none',
+                  backgroundImage: safeUrl ? `url("${safeUrl}")` : 'none',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   backgroundRepeat: 'no-repeat',

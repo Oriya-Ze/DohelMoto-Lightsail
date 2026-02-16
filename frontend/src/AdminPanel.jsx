@@ -56,7 +56,7 @@ const AdminPanel = ({ user, onLogout }) => {
         const res = await axios.get(`${API_URL}/admin/products`, getAuthHeaders())
         setProducts(res.data)
       } else if (activeTab === 'categories') {
-        const res = await axios.get(`${API_URL}/categories`)
+        const res = await axios.get(`${API_URL}/categories?_=${Date.now()}`)
         setCategories(res.data)
       } else if (activeTab === 'orders') {
         const res = await axios.get(`${API_URL}/admin/orders`, getAuthHeaders())
@@ -601,7 +601,12 @@ const CategoriesTab = ({ categories, loading, onAdd, onEdit, onDelete, showModal
 
   useEffect(() => {
     if (editingCategory) {
-      setFormData(editingCategory)
+      setFormData({
+        name: editingCategory.name || '',
+        name_he: editingCategory.name_he || '',
+        description: editingCategory.description || '',
+        image_url: editingCategory.image_url || ''
+      })
     } else {
       setFormData({
         name: '',
@@ -1215,6 +1220,7 @@ const ProductModal = ({ formData, setFormData, onSubmit, onClose, editing }) => 
 }
 
 const CategoryModal = ({ formData, setFormData, onSubmit, onClose, editing }) => {
+  const imageUrl = (formData.image_url || '').trim()
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -1224,7 +1230,7 @@ const CategoryModal = ({ formData, setFormData, onSubmit, onClose, editing }) =>
             <label>שם (אנגלית)</label>
             <input 
               type="text" 
-              value={formData.name} 
+              value={formData.name || ''} 
               onChange={(e) => setFormData({...formData, name: e.target.value})}
               required
             />
@@ -1233,7 +1239,7 @@ const CategoryModal = ({ formData, setFormData, onSubmit, onClose, editing }) =>
             <label>שם (עברית)</label>
             <input 
               type="text" 
-              value={formData.name_he} 
+              value={formData.name_he || ''} 
               onChange={(e) => setFormData({...formData, name_he: e.target.value})}
               required
             />
@@ -1241,17 +1247,36 @@ const CategoryModal = ({ formData, setFormData, onSubmit, onClose, editing }) =>
           <div className="form-group">
             <label>תיאור</label>
             <textarea 
-              value={formData.description} 
+              value={formData.description || ''} 
               onChange={(e) => setFormData({...formData, description: e.target.value})}
             />
           </div>
           <div className="form-group">
-            <label>קישור תמונה</label>
+            <label>קישור תמונה (יש להזין כתובת מלאה, למשל https://example.com/image.jpg)</label>
             <input 
-              type="url" 
-              value={formData.image_url} 
+              type="text" 
+              placeholder="https://..."
+              value={formData.image_url || ''} 
               onChange={(e) => setFormData({...formData, image_url: e.target.value})}
             />
+            {imageUrl && (
+              <div className="category-image-preview" style={{ marginTop: '12px' }}>
+                <p style={{ fontSize: '13px', marginBottom: '8px', color: '#6b7280' }}>תצוגה מקדימה:</p>
+                <img 
+                  src={imageUrl} 
+                  alt="תצוגה מקדימה" 
+                  style={{ maxWidth: '100%', maxHeight: '150px', borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                  onError={(e) => {
+                    e.target.style.display = 'none'
+                    const err = e.target.parentElement?.querySelector('.image-load-error')
+                    if (err) err.style.display = 'block'
+                  }}
+                />
+                <p className="image-load-error" style={{ fontSize: '12px', color: '#dc2626', marginTop: '4px', display: 'none' }}>
+                  התמונה לא נטענה - ייתכן שהקישור לא תקין או שהשרת חוסם (נסה קישור HTTPS)
+                </p>
+              </div>
+            )}
           </div>
           <div className="form-actions">
             <button type="submit" className="btn btn-primary">שמור</button>
